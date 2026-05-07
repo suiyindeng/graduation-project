@@ -1,0 +1,64 @@
+:root {
+  color-scheme: light;
+  --bg: #eaf8ff;
+  --bg-soft: #fbf7ff;
+  --panel: rgba(246, 253, 255, 0.68);
+  --panel-strong: rgba(255, 255, 255, 0.88);
+  --text: #142b54;
+  --muted: #5d7190;
+  --line: rgba(98, 185, 255, 0.34);
+  --primary: #29b8ff;
+  --primary-strong: #1269ef;
+  --accent: #8c68ff;
+  --accent-soft: #d7c7ff;
+  --crystal-cyan: #aef2ff;
+  --arcaea-line: rgba(112, 205, 255, 0.28);
+  --arcaea-violet-line: rgba(151, 118, 255, 0.2);
+  --arcaea-rose-line: rgba(255, 111, 166, 0.14);
+  --arcaea-pattern-glow: rgba(65, 174, 255, 0.08);
+  --success: #12a886;
+  --danger: #c9365e;
+  --shadow: 0 22px 70px rgba(31, 99, 189, 0.2);
+  --glass: blur(24px) saturate(1.5);
+  --radius: 8px;
+}
+
+:root[data-theme='rosmontis'] {
+  --bg: #f6f4f0;
+  --bg-soft: #fffdfa;
+  --panel: rgba(255, 255, 255, 0.8);
+  --panel-strong: rgba(255, 255, 255, 0.95);
+  --text: #26353a;
+  --muted: #6d7774;
+  --line: rgba(126, 153, 144, 0.28);
+  --primary: #7d9d92;
+  --primary-strong: #4e746b;
+  --accent: #c58b9b;
+  --accent-soft: #f1d6dc;
+  --gold-line: rgba(205, 155, 49, 0.82);
+  --gold-bright: rgba(255, 230, 154, 0.9);
+  --gold-deep: rgba(146, 105, 32, 0.58);
+  --gold-soft: rgba(248, 220, 139, 0.34);
+  --gold-glow: rgba(213, 168, 74, 0.2);
+  --success: #6b9f82;
+  --danger: #be5c75;
+  --shadow: 0 22px 64px rgba(95, 111, 101, 0.16);
+  --glass: blur(18px) saturate(1.1);
+}
+
+body {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0 1px, transparent 1px 70px),
+    linear-gradient(45deg, rgba(173, 235, 255, 0.35) 0 1px, transparent 1px 96px),
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--crystal-cyan) 48%, transparent), transparent 30rem),
+    radial-gradient(circle at 84% 12%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 28rem),
+    radial-gradient(circle at 45% 90%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 34rem),
+    linear-gradient(145deg, var(--bg), var(--bg-soft));
+}
+
+:root[data-theme='rosmontis'] body {
+  background:
+    linear-gradient(120deg, rgba(125, 157, 146, 0.15), transparent 30%),
+    linear-gradient(240deg, rgba(197, 139, 155, 0.13), transparent 34%),
+    linear-gradient(145deg, var(--bg), var(--bg-soft));
+}

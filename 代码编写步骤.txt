@@ -1,0 +1,184 @@
+代码编写步骤
+
+一、需求拆分
+1. 将系统拆分为后端、前端、数据库三部分。
+2. 后端负责用户登录注册、Excel 上传、自动清洗、可视化推荐、预测建模、Word 报告导出。
+3. 前端负责主题切换、页面展示、图表渲染、用户中心、管理员页面。
+4. MySQL 保存用户信息、清洗后的数据集、每一行清洗后数据、预测模型运行记录。
+
+二、后端项目搭建
+1. 创建 backend/app 目录，并按 core、db、models、schemas、routers、services 分层。
+2. 在 core/config.py 中读取 .env 配置，包括数据库连接、跨域地址、管理员注册码等。
+3. 在 db/session.py 中使用 SQLAlchemy 创建数据库连接和会话。
+4. 在 models/user.py 中定义用户表，保存用户名、邮箱、密码哈希、角色、头像地址、主题偏好。
+5. 在 models/dataset.py 中定义数据集表、清洗后数据行表和预测记录表。
+
+三、用户与权限功能
+1. 在 core/security.py 中使用 PBKDF2 保存密码哈希。
+2. 使用 HMAC 签名令牌实现登录状态校验。
+3. 在 routers/auth.py 中编写注册和登录接口。
+4. 注册时区分普通用户和管理员，管理员需要填写 ADMIN_REGISTER_CODE。
+5. 在 routers/dependencies.py 中实现当前用户识别和管理员权限校验。
+6. 在 routers/users.py 中实现用户中心、主题偏好保存和头像上传。
+
+四、Excel 数据清洗
+1. 在 services/data_cleaner.py 中使用 pandas 读取 Excel 文件。
+2. 删除全空行、全空列，并规范化字段名。
+3. 自动识别可转换为数字的字段，例如金额、数量、价格。
+4. 自动识别日期字段，例如日期、时间、月份、订单日期。
+5. 对缺失值进行处理：数值字段用中位数填充，日期字段前后填充，文本字段用众数或“未知”填充。
+6. 删除重复行，并统计原始行数、清洗后行数、缺失值数量、重复行数量。
+7. 将清洗后的每一行转换为 JSON，写入 MySQL，方便不同 Excel 字段结构共存。
+
+五、自动可视化推荐
+1. 根据字段类型生成推荐图表。
+2. 有日期字段和销售数值字段时，推荐月度趋势折线图。
+3. 有分类字段和销售数值字段时，推荐分类销售贡献柱状图和占比饼图。
+4. 有两个以上数值字段时，推荐散点图。
+5. 有三个以上数值字段时，推荐相关性热力图。
+6. 后端直接返回 ECharts option，前端只负责渲染，降低前端复杂度。
+
+六、行情预测功能
+1. 在 services/predictor.py 中编写预测逻辑。
+2. 系统优先尝试导入 PyCaret，如果当前环境支持并已安装，则进行自动模型比较。
+3. 如果 PyCaret 不可用，则使用 scikit-learn 的线性回归和随机森林回归作为回退模型。
+4. 有日期字段时，将销售数据按月份聚合，再预测未来月份。
+5. 无日期字段时，按数据顺序预测未来若干期。
+6. 保存预测目标、日期字段、算法名称、MAE、R2、未来预测值和预测摘要。
+
+七、Word 报告导出
+1. 前端通过 ECharts getDataURL 将图表导出为 base64 图片。
+2. 后端在 services/report_exporter.py 中使用 python-docx 创建 Word 文档。
+3. Word 文档包含数据清洗概览、系统推荐分析、可视化图表、预测结果、数据样例和备注。
+4. reports.py 接口将生成后的 docx 作为文件响应返回给前端。
+
+八、前端项目搭建
+1. 使用 Vite 创建 Vue3 项目结构。
+2. 在 src/api/client.js 中创建 Axios 实例，并自动携带登录令牌。
+3. 在 src/router/index.js 中配置登录页、工作台、管理员页、用户中心。
+4. 在 App.vue 中实现侧边栏导航、用户信息展示、主题切换和退出登录。
+
+九、前端主要页面
+1. AuthView.vue：实现普通用户和管理员的注册登录。
+2. DashboardView.vue：实现 Excel 上传、数据集选择、清洗结果展示、推荐分析、图表展示、预测和 Word 导出。
+3. AdminView.vue：实现管理员查看用户信息和所有数据集信息。
+4. ProfileView.vue：实现头像上传、用户名邮箱修改和默认主题设置。
+5. ChartPanel.vue：封装 ECharts 图表渲染和图表截图方法。
+6. DataPreview.vue：封装清洗后数据预览表格。
+
+十、主题风格设计
+1. 在 styles/theme.css 中使用 CSS 变量定义主题色。
+2. Arcaea 主题使用冷蓝、青色、紫色和玻璃晶体质感。
+3. “迷迭香 轻盈一梦”主题使用浅底色、灰绿、淡粉紫和柔和边框。
+4. 切换主题时修改 document.documentElement.dataset.theme。
+5. 用户保存主题后，后端同步写入 users 表。
+
+十一、启动前后端和数据库
+1. 进入项目根目录。
+
+PowerShell 命令：
+cd "D:\毕业设计\代码仓库\python+vue3+mysql"
+
+2. 启动或检查 MySQL 数据库服务。
+
+说明：本机已经安装 MySQL Server 8.0，服务名为 MYSQL80，因此不需要 Docker。如果提示 docker 命令不存在，是正常情况，直接使用本机 MySQL 即可。
+
+检查 MySQL 服务状态：
+Get-Service -Name MYSQL80
+
+如果 MYSQL80 的 Status 不是 Running，则启动 MySQL：
+Start-Service -Name MYSQL80
+
+检查 3306 端口是否监听：
+Get-NetTCPConnection -LocalPort 3306 -ErrorAction SilentlyContinue
+
+3. 确认项目数据库连接配置。
+
+后端配置文件位置：
+D:\毕业设计\代码仓库\python+vue3+mysql\backend\.env
+
+当前数据库连接配置：
+DATABASE_URL=mysql+pymysql://visual_user:visual_pass@127.0.0.1:3306/auto_visualization?charset=utf8mb4
+
+管理员注册静态密钥：
+ADMIN_REGISTER_CODE=FatalisHikari
+
+4. 如果是第一次配置 MySQL，需要创建项目数据库和项目用户。
+
+说明：当前电脑已经创建过 auto_visualization 数据库和 visual_user 用户，通常不需要重复执行。若重装 MySQL 或数据库被删除，可执行下面命令重新创建。
+
+PowerShell 命令：
+cd "D:\毕业设计\代码仓库\python+vue3+mysql"
+@'
+import pymysql
+
+conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', password='123456', autocommit=True)
+with conn.cursor() as cursor:
+    cursor.execute("CREATE DATABASE IF NOT EXISTS auto_visualization CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+    for host in ('localhost', '127.0.0.1', '%'):
+        cursor.execute(f"CREATE USER IF NOT EXISTS 'visual_user'@'{host}' IDENTIFIED BY 'visual_pass'")
+        cursor.execute(f"GRANT ALL PRIVILEGES ON auto_visualization.* TO 'visual_user'@'{host}'")
+    cursor.execute('FLUSH PRIVILEGES')
+conn.close()
+print('MySQL project database is ready.')
+'@ | .\backend\.venv313\Scripts\python.exe -
+
+5. 启动后端服务。
+
+PowerShell 命令：
+cd "D:\毕业设计\代码仓库\python+vue3+mysql\backend"
+.\.venv313\Scripts\Activate.ps1
+uvicorn app.main:app --reload
+
+后端启动成功后，浏览器访问：
+http://127.0.0.1:8000/api/health
+
+如果返回下面内容，说明后端正常：
+{"status":"ok","app":"Automatic Data Visualization System"}
+
+6. 如果后端提示 8000 端口被占用，先检查并关闭旧后端进程。
+
+检查 8000 端口：
+Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue
+
+关闭占用 8000 的进程：
+$connections = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
+$pids = $connections | Select-Object -ExpandProperty OwningProcess -Unique
+foreach ($pidValue in $pids) { Stop-Process -Id $pidValue -Force }
+
+然后重新执行后端启动命令：
+uvicorn app.main:app --reload
+
+7. 启动前端服务。
+
+另开一个 PowerShell 窗口，执行：
+cd "D:\毕业设计\代码仓库\python+vue3+mysql\frontend"
+npm run dev
+
+前端启动成功后，浏览器访问：
+http://127.0.0.1:5173
+
+8. 如果前端 5173 端口被占用，检查并关闭旧前端进程。
+
+检查 5173 端口：
+Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue
+
+关闭占用 5173 的进程：
+$connections = Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue
+$pids = $connections | Select-Object -ExpandProperty OwningProcess -Unique
+foreach ($pidValue in $pids) { Stop-Process -Id $pidValue -Force }
+
+然后重新执行前端启动命令：
+npm run dev
+
+9. 系统完整运行时应同时满足：
+MySQL: 127.0.0.1:3306
+后端: http://127.0.0.1:8000
+前端: http://127.0.0.1:5173
+
+十二、论文可说明的关键点
+1. 系统采用前后端分离架构，便于维护和扩展。
+2. 清洗后的数据保存在 MySQL 中，可追溯、可复用。
+3. 自动推荐图表降低非专业用户的数据分析门槛。
+4. 预测模块采用 PyCaret 优先、scikit-learn 回退的设计，提高环境兼容性。
+5. Word 导出功能将系统分析结果转化为可提交、可归档的报告。
