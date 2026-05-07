@@ -7,14 +7,12 @@
 - 后端：Python、FastAPI、SQLAlchemy、Pandas、scikit-learn、python-docx、MySQL
 - 前端：Vue3、Vite、Vue Router、Axios、ECharts、Lucide Icons
 - 数据库：MySQL，用于保存用户信息、清洗后的数据、预测结果
-- 自动建模：代码中预留 PyCaret 优先路径；未安装 PyCaret 时自动使用 scikit-learn 回退模型
 
 ## 目录结构
 
 ```text
 backend/                 Python 后端接口
 frontend/                Vue3 前端界面
-代码编写步骤.txt          开发步骤说明，便于学习和论文整理
 docker-compose.yml       本地 MySQL 启动配置
 ```
 
@@ -41,8 +39,6 @@ py -3.13 -m venv .venv313
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
-
-说明：本机同时有 Python 3.14 和 3.13。数据科学依赖在 Python 3.13 下安装验证通过，建议优先使用 Python 3.13。
 
 4. 安装前端依赖并启动：
 
