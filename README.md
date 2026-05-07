@@ -1,58 +1,85 @@
 # Python + Vue3 + MySQL 自动数据可视化系统
 
-本项目是一个面向实木家具销售 Excel 数据的自动清洗、可视化推荐、行情预测和 Word 报告导出系统。
+本项目用于对实木家具销售 Excel 数据进行自动清洗、可视化分析、行情预测和 Word 报告导出。
 
 ## 技术栈
 
-- 后端：Python、FastAPI、SQLAlchemy、Pandas、scikit-learn、python-docx、MySQL
-- 前端：Vue3、Vite、Vue Router、Axios、ECharts、Lucide Icons
-- 数据库：MySQL，用于保存用户信息、清洗后的数据、预测结果
+后端：
 
-## 目录结构
+- Python：后端主要开发语言。
+- FastAPI：提供登录、上传、分析、预测和导出接口。
+- SQLAlchemy：连接并操作数据库。
+- Pandas：读取 Excel，并完成数据清洗和统计。
+- scikit-learn：实现销售行情预测。
+- python-docx：生成 Word 分析报告。
+
+前端：
+
+- Vue3：构建前端页面。
+- Vite：启动和打包前端项目。
+- Vue Router：管理页面跳转。
+- Axios：请求后端接口。
+- ECharts：绘制可视化图表。
+- Lucide Icons：提供页面图标。
+
+数据库：
+
+- MySQL：保存用户信息和清洗后的数据。
+
+## 主要功能
+
+- 用户注册、登录、管理员和普通用户分离
+- Excel 表格上传、拖拽上传和数据清洗
+- 自动推荐可视化图表
+- 销售数据行情预测
+- Word 分析报告导出
+- 用户头像和用户中心
+- Arcaea / 轻盈一梦双主题切换
+
+## 目录说明
 
 ```text
-backend/                 Python 后端接口
-frontend/                Vue3 前端界面
-docker-compose.yml       本地 MySQL 启动配置
+backend/        后端代码
+frontend/       前端代码
+代码编写步骤.txt  项目编写和启动说明
 ```
 
-## 快速启动
+## 启动方式
 
-1. 启动 MySQL：
+先确认本机 MySQL 已启动，并已创建数据库：
 
-```powershell
-docker compose up -d mysql
+```sql
+CREATE DATABASE auto_visualization DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-2. 配置后端环境变量：
+后端启动：
 
 ```powershell
-cd backend
-Copy-Item .env.example .env
-```
-
-3. 安装后端依赖并启动：
-
-```powershell
-py -3.13 -m venv .venv313
+cd "D:\毕业设计\代码仓库\python+vue3+mysql\backend"
 .\.venv313\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-4. 安装前端依赖并启动：
+前端启动：
 
 ```powershell
-cd ..\frontend
+cd "D:\毕业设计\代码仓库\python+vue3+mysql\frontend"
 npm install
 npm run dev
 ```
 
-前端默认访问地址为 `http://127.0.0.1:5173`，后端接口地址为 `http://127.0.0.1:8000`。
+默认访问地址：
 
-## 默认说明
+- 前端：`http://127.0.0.1:5173`
+- 后端：`http://127.0.0.1:8000`
 
-- 普通用户注册后只能管理自己的数据。
-- 管理员注册需要填写 `.env` 中的 `ADMIN_REGISTER_CODE`，默认示例为 `admin-2026`。
-- 上传的 Excel 会自动完成空值处理、重复行处理、字段类型识别和可视化推荐。
-- Word 报告导出会包含数据概览、推荐图表截图和预测结果。
+如果 5173 被占用，Vite 会自动换到 5174，请按终端显示的地址访问。
+
+## 默认配置
+
+- 数据库连接在 `backend/.env` 中配置。
+- 默认管理员注册密钥：`FatalisHikari`
+- 普通用户只能管理自己的数据。
+- 管理员可以查看用户和数据集信息。
+- PyCaret 不是必须安装；未安装时系统会使用 scikit-learn 进行预测。
