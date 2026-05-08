@@ -10,7 +10,8 @@
 - FastAPI：提供登录、上传、分析、预测和导出接口。
 - SQLAlchemy：连接并操作数据库。
 - Pandas：读取 Excel，并完成数据清洗和统计。
-- scikit-learn：实现销售行情预测。
+- PyCaret：作为自动建模主体，完成预处理、模型比较和行情预测。
+- scikit-learn：作为 PyCaret 不可用时的回退预测方案。
 - python-docx：生成 Word 分析报告。
 
 前端：
@@ -34,7 +35,8 @@
 - 销售数据行情预测
 - Word 分析报告导出
 - 用户头像和用户中心
-- Arcaea / 轻盈一梦双主题切换
+- Arcaea / 轻盈一梦 / 腐蚀之心 / 模块禁用 / 七日重生主题切换
+- 超级管理员专属“遗忘的风华”主题
 
 ## 目录说明
 
@@ -56,7 +58,7 @@ CREATE DATABASE auto_visualization DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4
 
 ```powershell
 cd "D:\毕业设计\代码仓库\python+vue3+mysql\backend"
-.\.venv313\Scripts\Activate.ps1
+.\.venv311\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
@@ -82,4 +84,7 @@ npm run dev
 - 默认管理员注册密钥：`FatalisHikari`
 - 普通用户只能管理自己的数据。
 - 管理员可以查看用户和数据集信息。
-- PyCaret 不是必须安装；未安装时系统会使用 scikit-learn 进行预测。
+- “遗忘的风华”主题仅超级管理员 `冴月麟` 可见可用。
+- 论文演示环境使用 Python 3.11 和 PyCaret。
+- 系统优先使用 PyCaret 进行自动预处理、自动模型比较和预测，并根据预测结果生成经营建议。
+- 如果 PyCaret 不可用，系统会使用 scikit-learn 回退预测，保证基本功能可运行。

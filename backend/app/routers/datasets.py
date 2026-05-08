@@ -8,9 +8,16 @@ from app.core.config import settings
 from app.db.session import get_db
 from app.models.dataset import Dataset, DatasetRow, ModelRun
 from app.models.user import User
-from app.routers.dependencies import get_current_user
+from app.routers.dependencies import get_current_user, has_admin_permission
 from app.schemas.dataset import DatasetDetail, DatasetSummary, ForecastRequest, ForecastResponse
-from app.services.data_cleaner import dataframe_from_records, dataframe_to_records, load_and_clean_excel
+from app.services.data_cleaner import (
+    build_chart_options,
+    build_recommendations,
+    dataframe_from_records,
+    dataframe_to_records,
+    load_and_clean_excel,
+)
+from app.services.chart_interpreter import analyze_dataset_charts
 from app.services.predictor import forecast_dataframe
 
 router = APIRouter()
@@ -19,19 +26,27 @@ router = APIRouter()
 def _ensure_dataset_access(dataset: Dataset | None, user: User) -> Dataset:
     if not dataset:
         raise HTTPException(status_code=404, detail="数据集不存在")
-    if user.role != "admin" and dataset.owner_id != user.id:
+    if not has_admin_permission(user) and dataset.owner_id != user.id:
         raise HTTPException(status_code=403, detail="无权访问该数据集")
     return dataset
 
 
 def _detail_response(dataset: Dataset, db: Session) -> DatasetDetail:
-    preview_rows = (
+    dataset_rows = (
         db.query(DatasetRow)
         .filter(DatasetRow.dataset_id == dataset.id)
         .order_by(DatasetRow.row_index.asc())
-        .limit(30)
         .all()
     )
+    charts_json = dataset.charts_json
+    recommendations_json = dataset.recommendations_json
+    if dataset_rows:
+        df = dataframe_from_records([row.content_json for row in dataset_rows])
+        generated_charts = build_chart_options(df)
+        if generated_charts:
+            charts_json = generated_charts
+            recommendations_json = build_recommendations(generated_charts)
+
     return DatasetDetail(
         id=dataset.id,
         filename=dataset.filename,
@@ -39,10 +54,10 @@ def _detail_response(dataset: Dataset, db: Session) -> DatasetDetail:
         columns_count=dataset.columns_count,
         columns_json=dataset.columns_json,
         profile_json=dataset.profile_json,
-        recommendations_json=dataset.recommendations_json,
-        charts_json=dataset.charts_json,
+        recommendations_json=recommendations_json,
+        charts_json=charts_json,
         created_at=dataset.created_at,
-        preview_rows=[row.content_json for row in preview_rows],
+        preview_rows=[row.content_json for row in dataset_rows[:30]],
     )
 
 
@@ -52,10 +67,10 @@ async def upload_dataset(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> DatasetDetail:
-    """Upload Excel, clean it, save cleaned rows, and return chart recommendations."""
+    """Upload spreadsheet-like data, clean it, save cleaned rows, and return chart recommendations."""
     suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in {".xlsx", ".xls"}:
-        raise HTTPException(status_code=400, detail="仅支持 Excel 文件：.xlsx 或 .xls")
+    if suffix not in {".xlsx", ".xls", ".txt"}:
+        raise HTTPException(status_code=400, detail="仅支持表格数据文件：.xlsx、.xls 或 .txt")
 
     stored_name = f"{uuid4().hex}{suffix}"
     file_path = settings.upload_dir / stored_name
@@ -64,7 +79,7 @@ async def upload_dataset(
     try:
         cleaned_df, profile, recommendations, charts = load_and_clean_excel(file_path)
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Excel 解析或清洗失败：{exc}") from exc
+        raise HTTPException(status_code=400, detail=f"数据文件解析或清洗失败：{exc}") from exc
 
     dataset = Dataset(
         owner_id=current_user.id,
@@ -94,7 +109,7 @@ def list_datasets(
     current_user: User = Depends(get_current_user),
 ) -> list[DatasetSummary]:
     query = db.query(Dataset).order_by(Dataset.created_at.desc())
-    if current_user.role != "admin":
+    if not has_admin_permission(current_user):
         query = query.filter(Dataset.owner_id == current_user.id)
     return [DatasetSummary.model_validate(item) for item in query.all()]
 
@@ -107,6 +122,25 @@ def get_dataset(
 ) -> DatasetDetail:
     dataset = _ensure_dataset_access(db.get(Dataset, dataset_id), current_user)
     return _detail_response(dataset, db)
+
+
+@router.get("/{dataset_id}/chart-analysis")
+def get_chart_analysis(
+    dataset_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    dataset = _ensure_dataset_access(db.get(Dataset, dataset_id), current_user)
+    rows = db.query(DatasetRow).filter(DatasetRow.dataset_id == dataset.id).order_by(DatasetRow.row_index.asc()).all()
+    df = dataframe_from_records([row.content_json for row in rows])
+    charts = build_chart_options(df) or dataset.charts_json
+    return analyze_dataset_charts(
+        df=df,
+        profile=dataset.profile_json,
+        charts=charts,
+        filename=dataset.filename,
+        dataset_id=dataset.id,
+    )
 
 
 @router.post("/{dataset_id}/forecast", response_model=ForecastResponse)

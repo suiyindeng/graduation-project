@@ -35,6 +35,21 @@ def _add_chart_image(document: Document, title: str, image_base64: str) -> None:
     tmp_path.unlink(missing_ok=True)
 
 
+def _forecast_advice_values(model_run: ModelRun) -> dict[str, Any]:
+    metrics = model_run.metrics_json or {}
+    advice = metrics.get("business_advice") if isinstance(metrics, dict) else None
+    if not isinstance(advice, dict):
+        return {}
+    suggestions = advice.get("suggestions")
+    return {
+        "趋势判断": advice.get("trend_label", ""),
+        "可信度": advice.get("confidence", ""),
+        "通俗解读": advice.get("plain_summary", ""),
+        "经营建议": "；".join(suggestions) if isinstance(suggestions, list) else "",
+        "建模说明": advice.get("method_note", ""),
+    }
+
+
 def export_word_report(
     dataset: Dataset,
     rows: list[DatasetRow],
@@ -75,6 +90,7 @@ def export_word_report(
                 document.add_paragraph(f"{chart.get('title', '图表')}：图片写入失败")
 
     if model_run:
+        advice_values = _forecast_advice_values(model_run)
         _add_key_value_table(
             document,
             "四、行情预测结果",
@@ -84,6 +100,7 @@ def export_word_report(
                 "算法": model_run.algorithm,
                 "评估指标": model_run.metrics_json,
                 "摘要": model_run.summary,
+                **advice_values,
             },
         )
         table = document.add_table(rows=1, cols=2)

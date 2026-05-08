@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { AlertTriangle, BadgeCheck, BarChart3, Database, Download, FileSpreadsheet, RefreshCcw, Sparkles, Table2, TrendingDown, TrendingUp, UploadCloud, Wand2, X } from 'lucide-vue-next'
+import { AlertTriangle, BadgeCheck, BarChart3, Database, Download, Eye, FileSpreadsheet, RefreshCcw, Sparkles, Table2, TrendingDown, TrendingUp, UploadCloud, Wand2, X } from 'lucide-vue-next'
 import ChartPanel from '../components/ChartPanel.vue'
 import DataPreview from '../components/DataPreview.vue'
 import { datasetApi, reportApi } from '../api/modules'
@@ -14,6 +14,7 @@ const isDraggingFile = ref(false)
 const loading = ref(false)
 const message = ref('')
 const chartRefs = ref([])
+const hiddenChartIds = ref([])
 const activeResultTab = ref('overview')
 const forecastForm = ref({
   periods: 6,
@@ -23,10 +24,14 @@ const forecastForm = ref({
 
 const profileItems = computed(() => {
   const profile = currentDataset.value?.profile_json || {}
+  const business = profile.business_cleaning || {}
   return [
     ['原始行数', profile.original_rows ?? '-'],
     ['清洗后行数', profile.cleaned_rows ?? '-'],
     ['删除重复行', profile.duplicates_removed ?? '-'],
+    ['纠正负值', business.negative_values_corrected ?? 0],
+    ['重算异常金额', business.amounts_recalculated ?? 0],
+    ['规范折扣', business.discounts_normalized ?? 0],
     ['数值字段', profile.numeric_columns?.join('、') || '-'],
     ['日期字段', profile.date_columns?.join('、') || '-'],
     ['分类字段', profile.categorical_columns?.join('、') || '-']
@@ -42,15 +47,29 @@ const selectedFileSize = computed(() => {
 
 const resultTabs = computed(() => [
   { key: 'overview', label: '数据概览', icon: Database },
-  { key: 'charts', label: '可视化图表', icon: BarChart3, count: currentDataset.value?.charts_json?.length || 0 },
+  { key: 'charts', label: '可视化图表', icon: BarChart3, count: visibleCharts.value.length },
   { key: 'forecast', label: '行情预测', icon: TrendingUp },
   { key: 'preview', label: '数据预览', icon: Table2 },
 ])
+
+const hiddenStorageKey = computed(() => `hidden_charts_${currentDataset.value?.id || 'none'}`)
+
+const visibleCharts = computed(() => {
+  const hidden = new Set(hiddenChartIds.value)
+  return (currentDataset.value?.charts_json || []).filter((chart) => !hidden.has(chart.id))
+})
+
+const hiddenCharts = computed(() => {
+  const hidden = new Set(hiddenChartIds.value)
+  return (currentDataset.value?.charts_json || []).filter((chart) => hidden.has(chart.id))
+})
 
 const forecastInsight = computed(() => {
   const rows = forecast.value?.prediction_json || []
   if (!rows.length) return null
 
+  const metrics = forecast.value?.metrics_json || {}
+  const backendAdvice = metrics.business_advice || {}
   const values = rows.map((row) => Number(row.predicted_value)).filter((value) => Number.isFinite(value))
   if (!values.length) return null
 
@@ -61,8 +80,8 @@ const forecastInsight = computed(() => {
   const changeRate = first ? (change / first) * 100 : 0
   const absRate = Math.abs(changeRate)
   const direction = absRate < 5 ? 'stable' : change > 0 ? 'up' : 'down'
-  const mae = Number(forecast.value?.metrics_json?.mae)
-  const r2 = Number(forecast.value?.metrics_json?.r2)
+  const mae = Number(metrics.mae)
+  const r2 = Number(metrics.r2)
   const maeRate = average && Number.isFinite(mae) ? (mae / average) * 100 : null
 
   let confidence = '较低'
@@ -94,18 +113,29 @@ const forecastInsight = computed(() => {
         ? '预测有参考价值，但仍需要结合业务经验判断。'
         : '模型解释力偏弱，更适合看趋势方向，不建议单独作为决策依据。'
 
+  const adviceChange = Number(backendAdvice.change)
+  const adviceChangeRate = Number(backendAdvice.change_rate)
+  const adviceAverage = Number(backendAdvice.average)
+  const backendDirection = ['up', 'down', 'stable'].includes(backendAdvice.trend) ? backendAdvice.trend : direction
+  const backendSuggestions = Array.isArray(backendAdvice.suggestions)
+    ? backendAdvice.suggestions.filter(Boolean)
+    : []
+  const suggestions = backendSuggestions.length ? backendSuggestions : [suggestion]
+
   return {
     rows,
-    title,
-    trendText,
-    direction,
-    average: average.toFixed(2),
-    changeText: `${change >= 0 ? '+' : ''}${change.toFixed(2)}`,
-    changeRateText: `${changeRate >= 0 ? '+' : ''}${changeRate.toFixed(1)}%`,
-    confidence,
-    confidenceText,
-    plainSummary,
-    suggestion,
+    title: backendAdvice.title || title,
+    trendText: backendAdvice.trend_label || trendText,
+    direction: backendDirection,
+    average: Number.isFinite(adviceAverage) ? adviceAverage.toFixed(2) : average.toFixed(2),
+    changeText: Number.isFinite(adviceChange) ? `${adviceChange >= 0 ? '+' : ''}${adviceChange.toFixed(2)}` : `${change >= 0 ? '+' : ''}${change.toFixed(2)}`,
+    changeRateText: Number.isFinite(adviceChangeRate) ? `${adviceChangeRate >= 0 ? '+' : ''}${adviceChangeRate.toFixed(1)}%` : `${changeRate >= 0 ? '+' : ''}${changeRate.toFixed(1)}%`,
+    confidence: backendAdvice.confidence || confidence,
+    confidenceText: backendAdvice.confidence_text || confidenceText,
+    plainSummary: backendAdvice.plain_summary || plainSummary,
+    suggestion: suggestions[0],
+    suggestions,
+    methodNote: backendAdvice.method_note || '',
     maeText: Number.isFinite(mae) ? mae.toFixed(2) : '-',
     r2Text: Number.isFinite(r2) ? r2.toFixed(3) : '-',
     maeRateText: maeRate !== null ? `${maeRate.toFixed(1)}%` : '-'
@@ -125,6 +155,8 @@ async function selectDataset(id) {
   const { data } = await datasetApi.detail(id)
   currentDataset.value = data
   forecast.value = null
+  chartRefs.value = []
+  hiddenChartIds.value = JSON.parse(localStorage.getItem(`hidden_charts_${data.id}`) || '[]')
   activeResultTab.value = 'overview'
   forecastForm.value.target_column = data.profile_json?.target_column || ''
   forecastForm.value.date_column = data.profile_json?.date_column || ''
@@ -145,9 +177,9 @@ function openFilePicker() {
 function acceptFile(file) {
   if (!file) return
   const extension = file.name.split('.').pop()?.toLowerCase()
-  if (!['xlsx', 'xls'].includes(extension)) {
+  if (!['xlsx', 'xls', 'txt'].includes(extension)) {
     selectedFile.value = null
-    message.value = '请上传 .xlsx 或 .xls 格式的 Excel 文件'
+    message.value = '请上传 .xlsx、.xls 或 .txt 格式的数据文件'
     return
   }
   selectedFile.value = file
@@ -185,6 +217,9 @@ async function uploadDataset() {
     formData.append('file', selectedFile.value)
     const { data } = await datasetApi.upload(formData)
     currentDataset.value = data
+    chartRefs.value = []
+    hiddenChartIds.value = []
+    localStorage.removeItem(`hidden_charts_${data.id}`)
     forecastForm.value.target_column = data.profile_json?.target_column || ''
     forecastForm.value.date_column = data.profile_json?.date_column || ''
     await loadDatasets()
@@ -248,6 +283,37 @@ async function exportReport() {
   }
 }
 
+function saveHiddenCharts() {
+  if (!currentDataset.value) return
+  localStorage.setItem(hiddenStorageKey.value, JSON.stringify(hiddenChartIds.value))
+}
+
+async function hideChart(chartId) {
+  if (!hiddenChartIds.value.includes(chartId)) {
+    hiddenChartIds.value = [...hiddenChartIds.value, chartId]
+    chartRefs.value = []
+    saveHiddenCharts()
+    await nextTick()
+    chartRefs.value.filter(Boolean).forEach((chartRef) => chartRef.renderChart?.())
+  }
+}
+
+async function showChart(chartId) {
+  hiddenChartIds.value = hiddenChartIds.value.filter((id) => id !== chartId)
+  chartRefs.value = []
+  saveHiddenCharts()
+  await nextTick()
+  chartRefs.value.filter(Boolean).forEach((chartRef) => chartRef.renderChart?.())
+}
+
+async function showAllCharts() {
+  hiddenChartIds.value = []
+  chartRefs.value = []
+  saveHiddenCharts()
+  await nextTick()
+  chartRefs.value.filter(Boolean).forEach((chartRef) => chartRef.renderChart?.())
+}
+
 onMounted(loadDatasets)
 </script>
 
@@ -272,8 +338,8 @@ onMounted(loadDatasets)
         <div class="upload-copy">
           <FileSpreadsheet :size="34" />
           <div>
-            <h2>上传 Excel 表格</h2>
-            <p>.xlsx 或 .xls，系统会自动清洗、识别字段并推荐可视化。</p>
+            <h2>上传数据表格</h2>
+            <p>.xlsx、.xls 或 .txt，系统会自动清洗、识别字段并推荐可视化。</p>
           </div>
         </div>
 
@@ -284,12 +350,12 @@ onMounted(loadDatasets)
           @click="openFilePicker"
         >
           <UploadCloud :size="34" />
-          <span>{{ selectedFile ? '已选择文件' : '拖入 Excel 文件或点击选择' }}</span>
+          <span>{{ selectedFile ? '已选择文件' : '拖入数据文件或点击选择' }}</span>
           <strong v-if="selectedFile">{{ selectedFile.name }}</strong>
-          <small>{{ selectedFile ? selectedFileSize : '支持 .xlsx / .xls，建议上传原始销售明细表' }}</small>
+          <small>{{ selectedFile ? selectedFileSize : '支持 .xlsx / .xls / .txt，建议上传原始销售明细表' }}</small>
         </button>
 
-        <input ref="fileInput" class="visually-hidden" type="file" accept=".xlsx,.xls" @change="handleFileChange" />
+        <input ref="fileInput" class="visually-hidden" type="file" accept=".xlsx,.xls,.txt,text/plain" @change="handleFileChange" />
 
         <div class="upload-actions">
           <button v-if="selectedFile" type="button" class="ghost-button" @click="clearSelectedFile">
@@ -360,20 +426,47 @@ onMounted(loadDatasets)
         </section>
       </section>
 
-      <section v-show="activeResultTab === 'charts'" class="chart-grid result-panel">
-        <ChartPanel
-          v-for="(chart, index) in currentDataset.charts_json"
-          :key="chart.id"
-          :ref="(el) => (chartRefs[index] = el)"
-          :chart="chart"
-        />
+      <section v-show="activeResultTab === 'charts'" class="result-panel">
+        <section class="forecast-result chart-visibility-panel">
+          <div>
+            <strong>图表显示管理</strong>
+            <span>当前显示 {{ visibleCharts.length }} 张，隐藏 {{ hiddenCharts.length }} 张</span>
+          </div>
+          <div v-if="hiddenCharts.length" class="hidden-chart-list">
+            <button
+              v-for="chart in hiddenCharts"
+              :key="chart.id"
+              type="button"
+              class="ghost-button"
+              @click="showChart(chart.id)"
+            >
+              <Eye :size="16" /> 显示 {{ chart.title }}
+            </button>
+            <button type="button" class="primary-button" @click="showAllCharts">全部显示</button>
+          </div>
+        </section>
+
+        <section v-if="visibleCharts.length" class="chart-grid">
+          <ChartPanel
+            v-for="(chart, index) in visibleCharts"
+            :key="chart.id"
+            :ref="(el) => (chartRefs[index] = el)"
+            :chart="chart"
+            show-actions
+            @hide="hideChart"
+          />
+        </section>
+
+        <section v-else class="empty-state">
+          所有图表都已隐藏。点击“全部显示”可以恢复。
+        </section>
       </section>
 
-      <section v-show="activeResultTab === 'forecast'" class="result-panel">
+        <section v-show="activeResultTab === 'forecast'" class="result-panel">
         <section class="forecast-band">
           <div>
             <h2>未来行情预测</h2>
-            <p>选择预测目标和期数，系统会优先尝试 PyCaret，并提供 scikit-learn 回退模型。</p>
+            <p>选择预测目标和期数，系统会优先使用 PyCaret 自动预处理、自动比较模型并生成预测建议。</p>
           </div>
           <label>
             预测目标
@@ -433,8 +526,11 @@ onMounted(loadDatasets)
 
           <div class="forecast-advice">
             <strong>经营建议</strong>
-            <p>{{ forecastInsight.suggestion }}</p>
+            <ul class="forecast-advice-list">
+              <li v-for="item in forecastInsight.suggestions" :key="item">{{ item }}</li>
+            </ul>
             <small>{{ forecastInsight.confidenceText }}</small>
+            <small v-if="forecastInsight.methodNote">{{ forecastInsight.methodNote }}</small>
           </div>
 
           <div class="prediction-list">

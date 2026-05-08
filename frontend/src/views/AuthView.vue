@@ -87,7 +87,7 @@ function persistAuth(data) {
   localStorage.setItem('theme', data.user.theme_preference || 'arcaea')
   document.documentElement.dataset.theme = data.user.theme_preference || 'arcaea'
   emit('auth-updated', data.user)
-  router.push(data.user.role === 'admin' ? '/admin' : '/dashboard')
+  router.push(['admin', 'super_admin'].includes(data.user.role) ? '/admin' : '/dashboard')
 }
 
 async function login() {

@@ -62,4 +62,15 @@ class TokenResponse(BaseModel):
 class UserUpdateRequest(BaseModel):
     username: str | None = Field(default=None, min_length=2, max_length=50)
     email: EmailStr | None = None
-    theme_preference: str | None = Field(default=None, pattern="^(arcaea|rosmontis)$")
+    theme_preference: str | None = Field(default=None, pattern="^(arcaea|rosmontis|skadi|module_disabled|seven_rebirth|forgotten_fenghua)$")
+
+
+class AdminUserUpdateRequest(BaseModel):
+    username: str | None = Field(default=None, min_length=2, max_length=50)
+    email: EmailStr | None = None
+    theme_preference: str | None = Field(default=None, pattern="^(arcaea|rosmontis|skadi|module_disabled|seven_rebirth|forgotten_fenghua)$")
+    is_active: bool | None = None
+
+
+class SuperAdminUserUpdateRequest(AdminUserUpdateRequest):
+    role: str | None = Field(default=None, pattern="^(user|admin)$")

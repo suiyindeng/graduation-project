@@ -2,15 +2,13 @@ fastapi==0.116.1
 uvicorn[standard]==0.35.0
 sqlalchemy==2.0.41
 pymysql==1.1.1
-pandas==2.3.1
-numpy==2.3.1
 openpyxl==3.1.5
 xlrd==2.0.1
-scikit-learn==1.7.0
 python-docx==1.2.0
 python-multipart==0.0.20
 pydantic-settings==2.10.1
 email-validator==2.2.0
+pycaret==3.3.2
 
-# PyCaret is optional. Install it only if your Python version supports it:
-# pip install pycaret
+# Use Python 3.11 for the PyCaret thesis/demo environment.
+# PyCaret will install compatible pandas, numpy and scikit-learn versions.

@@ -1,14 +1,20 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Download, EyeOff } from 'lucide-vue-next'
 import * as echarts from 'echarts'
 
 const props = defineProps({
   chart: {
     type: Object,
     required: true
+  },
+  showActions: {
+    type: Boolean,
+    default: false
   }
 })
 
+const emit = defineEmits(['hide'])
 const chartEl = ref(null)
 let chartInstance = null
 
@@ -25,6 +31,19 @@ function getImage() {
     pixelRatio: 2,
     backgroundColor: '#ffffff'
   })
+}
+
+function safeFilename(name) {
+  return String(name || 'chart').replace(/[\\/:*?"<>|]/g, '_')
+}
+
+function downloadChart() {
+  const image = getImage()
+  if (!image) return
+  const link = document.createElement('a')
+  link.href = image
+  link.download = `${safeFilename(props.chart.title)}.png`
+  link.click()
 }
 
 defineExpose({ getImage, renderChart, title: props.chart.title })
@@ -56,7 +75,15 @@ onBeforeUnmount(() => {
         <h3>{{ chart.title }}</h3>
         <p>{{ chart.reason }}</p>
       </div>
-      <span>{{ chart.type }}</span>
+      <div class="chart-header-actions">
+        <button v-if="showActions" type="button" class="chart-action-button" title="下载该图表" @click="downloadChart">
+          <Download :size="16" />
+        </button>
+        <button v-if="showActions" type="button" class="chart-action-button" title="隐藏该图表" @click="emit('hide', chart.id)">
+          <EyeOff :size="16" />
+        </button>
+        <span>{{ chart.type }}</span>
+      </div>
     </header>
     <div ref="chartEl" class="chart-canvas"></div>
   </section>

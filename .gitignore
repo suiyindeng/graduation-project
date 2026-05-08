@@ -2,8 +2,11 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv311/
 .venv313/
 .env
+logs.log
+backend/logs.log
 
 # Node
 node_modules/

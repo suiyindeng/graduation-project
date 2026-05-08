@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { BarChart3, LogOut, Settings, Shield, UploadCloud } from 'lucide-vue-next'
+import { BarChart3, BookOpen, LineChart, LogOut, Settings, Shield, UploadCloud } from 'lucide-vue-next'
 import ThemeSwitcher from './components/ThemeSwitcher.vue'
 import { userApi } from './api/modules'
 import { getAssetUrl } from './api/client'
@@ -15,14 +15,24 @@ const theme = ref(localStorage.getItem('theme') || 'arcaea')
 const isAuthed = computed(() => Boolean(token.value))
 const isAuthPage = computed(() => route.path === '/auth' || route.path === '/forgot-password')
 const avatarText = computed(() => user.value?.username?.slice(0, 1)?.toUpperCase() || 'U')
+const canUseAdmin = computed(() => ['admin', 'super_admin'].includes(user.value?.role))
+const canUseSystemStats = computed(() => user.value?.role === 'super_admin')
+const canUseFenghuaTheme = computed(() => user.value?.role === 'super_admin' && user.value?.username === '冴月麟')
+const roleLabel = computed(() => {
+  if (user.value?.role === 'super_admin') return '超级管理员'
+  if (user.value?.role === 'admin') return '管理员'
+  return '普通用户'
+})
 
 function applyTheme(name) {
-  theme.value = name
-  document.documentElement.dataset.theme = name
-  localStorage.setItem('theme', name)
+  const nextTheme = name === 'forgotten_fenghua' && !canUseFenghuaTheme.value ? 'arcaea' : name
+  theme.value = nextTheme
+  document.documentElement.dataset.theme = nextTheme
+  localStorage.setItem('theme', nextTheme)
 }
 
 async function setTheme(name) {
+  if (name === 'forgotten_fenghua' && !canUseFenghuaTheme.value) return
   applyTheme(name)
   if (user.value) {
     try {
@@ -92,18 +102,20 @@ watch(
 
       <nav class="nav-list">
         <RouterLink to="/dashboard"><UploadCloud :size="18" /> 工作台</RouterLink>
-        <RouterLink v-if="user?.role === 'admin'" to="/admin"><Shield :size="18" /> 管理端</RouterLink>
+        <RouterLink to="/legend-analysis"><BookOpen :size="18" /> 图例分析</RouterLink>
+        <RouterLink v-if="canUseAdmin" to="/admin"><Shield :size="18" /> 管理端</RouterLink>
+        <RouterLink v-if="canUseSystemStats" to="/admin/stats"><LineChart :size="18" /> 系统数据统计</RouterLink>
         <RouterLink to="/profile"><Settings :size="18" /> 用户中心</RouterLink>
       </nav>
 
-      <ThemeSwitcher :theme="theme" @change="setTheme" />
+      <ThemeSwitcher :theme="theme" :user="user" @change="setTheme" />
 
       <div class="user-strip" @click="router.push('/profile')">
         <img v-if="user?.avatar_url" :src="getAssetUrl(user.avatar_url)" alt="avatar" />
         <div v-else class="avatar-fallback">{{ avatarText }}</div>
         <div>
           <strong>{{ user?.username }}</strong>
-          <span>{{ user?.role === 'admin' ? '管理员' : '普通用户' }}</span>
+          <span>{{ roleLabel }}</span>
         </div>
       </div>
 

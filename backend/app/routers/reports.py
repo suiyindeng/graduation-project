@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.dataset import Dataset, DatasetRow, ModelRun
 from app.models.user import User
-from app.routers.dependencies import get_current_user
+from app.routers.dependencies import get_current_user, has_admin_permission
 from app.schemas.report import ExportReportRequest
 from app.services.report_exporter import export_word_report
 
@@ -15,7 +15,7 @@ router = APIRouter()
 def _check_dataset(dataset: Dataset | None, user: User) -> Dataset:
     if not dataset:
         raise HTTPException(status_code=404, detail="数据集不存在")
-    if user.role != "admin" and dataset.owner_id != user.id:
+    if not has_admin_permission(user) and dataset.owner_id != user.id:
         raise HTTPException(status_code=403, detail="无权导出该数据集")
     return dataset
 

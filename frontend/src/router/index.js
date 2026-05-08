@@ -4,6 +4,8 @@ import DashboardView from '../views/DashboardView.vue'
 import AdminView from '../views/AdminView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import ForgotPasswordView from '../views/ForgotPasswordView.vue'
+import SystemStatsView from '../views/SystemStatsView.vue'
+import LegendAnalysisView from '../views/LegendAnalysisView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -12,7 +14,9 @@ const router = createRouter({
     { path: '/auth', component: AuthView },
     { path: '/forgot-password', component: ForgotPasswordView },
     { path: '/dashboard', component: DashboardView, meta: { requiresAuth: true } },
+    { path: '/legend-analysis', component: LegendAnalysisView, meta: { requiresAuth: true } },
     { path: '/admin', component: AdminView, meta: { requiresAuth: true, requiresAdmin: true } },
+    { path: '/admin/stats', component: SystemStatsView, meta: { requiresAuth: true, requiresSuperAdmin: true } },
     { path: '/profile', component: ProfileView, meta: { requiresAuth: true } }
   ]
 })
@@ -23,7 +27,10 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth && !token) {
     return '/auth'
   }
-  if (to.meta.requiresAdmin && user?.role !== 'admin') {
+  if (to.meta.requiresAdmin && !['admin', 'super_admin'].includes(user?.role)) {
+    return '/dashboard'
+  }
+  if (to.meta.requiresSuperAdmin && user?.role !== 'super_admin') {
     return '/dashboard'
   }
   if ((to.path === '/auth' || to.path === '/forgot-password') && token) {
