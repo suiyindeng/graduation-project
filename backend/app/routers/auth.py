@@ -21,6 +21,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserBase,
 )
+from app.services.activity_logger import log_activity
 
 router = APIRouter()
 CAPTCHA_TTL_MINUTES = 5
@@ -136,6 +137,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
     db.add(user)
     db.commit()
     db.refresh(user)
+    log_activity(db, user, "register", "注册账号", f"创建{ '管理员' if user.role == 'admin' else '普通用户' }账号")
+    db.commit()
 
     token = create_access_token(str(user.id), user.role)
     return TokenResponse(access_token=token, user=UserBase.model_validate(user))
@@ -150,6 +153,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="账号或密码错误")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="用户已停用")
+
+    log_activity(db, user, "login", "登录系统", "账号密码验证通过")
+    db.commit()
 
     token = create_access_token(str(user.id), user.role)
     return TokenResponse(access_token=token, user=UserBase.model_validate(user))
@@ -206,5 +212,6 @@ def confirm_password_reset(
         raise HTTPException(status_code=404, detail="该邮箱未注册")
 
     user.password_hash = hash_password(payload.new_password)
+    log_activity(db, user, "password_reset", "重置密码", "通过重置验证码修改密码")
     db.commit()
     return {"message": "密码已重置，请返回登录页重新登录"}

@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.db.session import init_db
-from app.routers import admin, auth, datasets, reports, users
+from app.routers import admin, auth, datasets, ledger, reports, users
 
 
 def create_app() -> FastAPI:
@@ -24,6 +24,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
     app.include_router(users.router, prefix="/api/users", tags=["users"])
     app.include_router(datasets.router, prefix="/api/datasets", tags=["datasets"])
+    app.include_router(ledger.router, prefix="/api/ledger", tags=["ledger"])
     app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
     app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 

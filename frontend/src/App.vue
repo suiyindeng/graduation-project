@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { BarChart3, BookOpen, LineChart, LogOut, Settings, Shield, UploadCloud } from 'lucide-vue-next'
+import { BarChart3, BookOpen, LineChart, LogOut, ReceiptText, Settings, Shield, UploadCloud } from 'lucide-vue-next'
 import ThemeSwitcher from './components/ThemeSwitcher.vue'
 import { userApi } from './api/modules'
 import { getAssetUrl } from './api/client'
@@ -102,6 +102,7 @@ watch(
 
       <nav class="nav-list">
         <RouterLink to="/dashboard"><UploadCloud :size="18" /> 工作台</RouterLink>
+        <RouterLink to="/ledger"><ReceiptText :size="18" /> 记账</RouterLink>
         <RouterLink to="/legend-analysis"><BookOpen :size="18" /> 图例分析</RouterLink>
         <RouterLink v-if="canUseAdmin" to="/admin"><Shield :size="18" /> 管理端</RouterLink>
         <RouterLink v-if="canUseSystemStats" to="/admin/stats"><LineChart :size="18" /> 系统数据统计</RouterLink>

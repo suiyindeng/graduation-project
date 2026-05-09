@@ -22,7 +22,7 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db() -> None:
     """Create database tables declared in app.models."""
-    from app.models import dataset, user  # noqa: F401
+    from app.models import activity, dataset, ledger, user  # noqa: F401
     from app.core.security import hash_password
     from app.models.user import User
 

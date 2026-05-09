@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { Camera, Mail, Save, Shield, UserRound } from 'lucide-vue-next'
+import { Activity, Camera, Clock3, History, Mail, Save, Shield, UserRound } from 'lucide-vue-next'
 import { getAssetUrl } from '../api/client'
 import { userApi } from '../api/modules'
 
@@ -17,11 +17,50 @@ const message = ref('')
 const avatarText = computed(() => user.value?.username?.slice(0, 1)?.toUpperCase() || 'U')
 const isSuperAdmin = computed(() => user.value?.role === 'super_admin')
 const canUseFenghuaTheme = computed(() => user.value?.role === 'super_admin' && user.value?.username === '冴月麟')
+const recentLogins = computed(() => usage.value?.recent_logins || [])
+const recentOperations = computed(() => usage.value?.recent_operations || [])
+const registeredText = computed(() => formatDate(usage.value?.registered_at || user.value?.created_at))
+const lastLoginText = computed(() => formatDate(recentLogins.value[0]?.created_at))
 const roleLabel = computed(() => {
   if (user.value?.role === 'super_admin') return '超级管理员'
   if (user.value?.role === 'admin') return '管理员'
   return '普通用户'
 })
+
+const actionLabels = {
+  register: '账号注册',
+  password_reset: '密码重置',
+  profile_update: '资料设置',
+  avatar_update: '头像设置',
+  dataset_upload: '数据清洗',
+  dataset_delete: '删除数据',
+  chart_analysis: '图例分析',
+  forecast_create: '行情预测',
+  report_export: '报告导出',
+  ledger_field_create: '记账字段',
+  ledger_field_delete: '记账字段',
+  ledger_record_create: '记账记录',
+  ledger_record_delete: '记账记录',
+  ledger_export: '记账导出',
+  ledger_to_dataset: '记账转数据'
+}
+
+function formatDate(value) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+function actionLabel(action) {
+  return actionLabels[action] || '系统操作'
+}
 
 function fillForm(data) {
   user.value = data
@@ -140,9 +179,64 @@ onMounted(loadProfile)
         </article>
         <article class="metric-tile">
           <span>最近上传</span>
-          <strong>{{ usage?.last_dataset_at || '-' }}</strong>
+          <strong>{{ formatDate(usage?.last_dataset_at) }}</strong>
         </article>
       </div>
+    </section>
+
+    <section class="profile-log-grid">
+      <article class="profile-form">
+        <header><Clock3 :size="20" /><h2>账户时间记录</h2></header>
+        <div class="profile-metrics profile-time-metrics">
+          <article class="metric-tile">
+            <span>账户注册时间</span>
+            <strong>{{ registeredText }}</strong>
+          </article>
+          <article class="metric-tile">
+            <span>最近登录</span>
+            <strong>{{ lastLoginText }}</strong>
+          </article>
+          <article class="metric-tile">
+            <span>近一周登录</span>
+            <strong>{{ recentLogins.length }}</strong>
+          </article>
+          <article class="metric-tile">
+            <span>近一周操作</span>
+            <strong>{{ usage?.operation_count_7d ?? 0 }}</strong>
+          </article>
+        </div>
+        <div class="profile-log-list">
+          <h3>最近一周登录记录</h3>
+          <p v-if="!recentLogins.length" class="empty-state profile-empty-note">最近一周暂无登录记录。</p>
+          <article v-for="item in recentLogins" :key="item.id" class="profile-log-item">
+            <span class="profile-log-dot"></span>
+            <div>
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.detail || '登录系统' }}</p>
+            </div>
+            <time>{{ formatDate(item.created_at) }}</time>
+          </article>
+        </div>
+      </article>
+
+      <article class="profile-form">
+        <header><History :size="20" /><h2>系统使用操作记录</h2></header>
+        <div class="profile-log-summary">
+          <span><Activity :size="16" /> 总操作 {{ usage?.operation_count_total ?? 0 }} 次</span>
+          <span>最近保留 {{ recentOperations.length }} 条</span>
+        </div>
+        <div class="profile-log-list">
+          <p v-if="!recentOperations.length" class="empty-state profile-empty-note">暂无系统操作记录。</p>
+          <article v-for="item in recentOperations" :key="item.id" class="profile-log-item">
+            <span class="profile-log-tag">{{ actionLabel(item.action) }}</span>
+            <div>
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.detail || '已完成操作' }}</p>
+            </div>
+            <time>{{ formatDate(item.created_at) }}</time>
+          </article>
+        </div>
+      </article>
     </section>
   </div>
 </template>

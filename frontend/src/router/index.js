@@ -6,6 +6,7 @@ import ProfileView from '../views/ProfileView.vue'
 import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import SystemStatsView from '../views/SystemStatsView.vue'
 import LegendAnalysisView from '../views/LegendAnalysisView.vue'
+import LedgerView from '../views/LedgerView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -14,6 +15,7 @@ const router = createRouter({
     { path: '/auth', component: AuthView },
     { path: '/forgot-password', component: ForgotPasswordView },
     { path: '/dashboard', component: DashboardView, meta: { requiresAuth: true } },
+    { path: '/ledger', component: LedgerView, meta: { requiresAuth: true } },
     { path: '/legend-analysis', component: LegendAnalysisView, meta: { requiresAuth: true } },
     { path: '/admin', component: AdminView, meta: { requiresAuth: true, requiresAdmin: true } },
     { path: '/admin/stats', component: SystemStatsView, meta: { requiresAuth: true, requiresSuperAdmin: true } },

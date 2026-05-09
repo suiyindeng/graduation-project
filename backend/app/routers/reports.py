@@ -7,6 +7,7 @@ from app.models.dataset import Dataset, DatasetRow, ModelRun
 from app.models.user import User
 from app.routers.dependencies import get_current_user, has_admin_permission
 from app.schemas.report import ExportReportRequest
+from app.services.activity_logger import log_activity
 from app.services.report_exporter import export_word_report
 
 router = APIRouter()
@@ -42,6 +43,15 @@ def export_report(
         chart_images=[item.model_dump() for item in payload.chart_images],
         notes=payload.notes,
     )
+    log_activity(
+        db,
+        current_user,
+        "report_export",
+        "导出 Word 报告",
+        dataset.filename,
+        {"dataset_id": dataset.id, "model_run_id": payload.model_run_id},
+    )
+    db.commit()
     return FileResponse(
         path=report_path,
         filename=report_path.name,

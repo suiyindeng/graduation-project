@@ -32,6 +32,21 @@ export const reportApi = {
     })
 }
 
+export const ledgerApi = {
+  fields: () => api.get('/ledger/fields'),
+  createField: (payload) => api.post('/ledger/fields', payload),
+  removeField: (id) => api.delete(`/ledger/fields/${id}`),
+  records: () => api.get('/ledger/records'),
+  importExcel: (formData) => api.post('/ledger/import', formData),
+  createRecord: (payload) => api.post('/ledger/records', payload),
+  removeRecord: (id) => api.delete(`/ledger/records/${id}`),
+  exportExcel: () => api.get('/ledger/export', { responseType: 'blob' }),
+  toDataset: (payload) => api.post('/ledger/to-dataset', payload),
+  groupPreview: (payload) => api.post('/ledger/group-preview', payload),
+  groupExport: (payload) => api.post('/ledger/group-export', payload, { responseType: 'blob' }),
+  groupToDataset: (payload) => api.post('/ledger/group-to-dataset', payload)
+}
+
 export const adminApi = {
   users: () => api.get('/admin/users'),
   datasets: () => api.get('/admin/datasets'),

@@ -1613,6 +1613,8 @@ button {
 :root[data-theme="seven_rebirth"] .app-shell,
 :root[data-theme="seven_rebirth"] .auth-shell {
   background:
+    linear-gradient(rgba(7, 9, 8, 0.28), rgba(7, 9, 8, 0.34)),
+    url("../assets/themes/seven-rebirth-bg.svg") center / cover fixed,
     radial-gradient(
       circle at 50% 10%,
       rgba(245, 234, 210, 0.12) 0 4.2rem,
@@ -1647,6 +1649,8 @@ button {
 :root[data-theme="seven_rebirth"] .sidebar {
   border-right-color: rgba(183, 148, 79, 0.44);
   background:
+    url("../assets/themes/seven-rebirth-talisman.svg") 108% 8% / 86px auto no-repeat,
+    url("../assets/themes/seven-rebirth-ornament.svg") 50% 94% / 220px auto no-repeat,
     linear-gradient(180deg, rgba(8, 11, 8, 0.95), rgba(24, 19, 13, 0.88)),
     var(--panel);
   box-shadow:
@@ -1660,6 +1664,9 @@ button {
   inset: 0;
   pointer-events: none;
   background:
+    url("../assets/themes/seven-rebirth-talisman.svg") 10% 18% / 76px auto no-repeat,
+    url("../assets/themes/seven-rebirth-talisman.svg") 88% 74% / 64px auto no-repeat,
+    url("../assets/themes/seven-rebirth-ornament.svg") 50% 8% / min(520px, 54vw) auto no-repeat,
     radial-gradient(
       circle at 50% 12%,
       rgba(245, 234, 210, 0.15) 0 4.5rem,
@@ -1709,6 +1716,7 @@ button {
   color: var(--text);
   border-color: var(--line);
   background:
+    url("../assets/themes/seven-rebirth-ornament.svg") center / 72% auto no-repeat,
     linear-gradient(
       145deg,
       rgba(24, 29, 18, 0.84),
@@ -1721,6 +1729,19 @@ button {
     0 0 0 1px rgba(224, 196, 125, 0.08),
     0 0 28px rgba(184, 39, 52, 0.12),
     inset 0 1px 0 rgba(245, 234, 210, 0.12);
+}
+
+:root[data-theme="seven_rebirth"] .content-area::before {
+  content: "";
+  position: fixed;
+  right: clamp(18px, 4vw, 76px);
+  bottom: clamp(20px, 5vh, 90px);
+  width: min(190px, 18vw);
+  aspect-ratio: 150 / 260;
+  pointer-events: none;
+  opacity: 0.16;
+  background: url("../assets/themes/seven-rebirth-talisman.svg") center / contain no-repeat;
+  filter: drop-shadow(0 0 18px rgba(184, 39, 52, 0.26));
 }
 
 :root[data-theme="seven_rebirth"] .auth-theme-switcher {
@@ -1796,6 +1817,7 @@ button {
   pointer-events: none;
   opacity: 0.68;
   background:
+    url("../assets/themes/seven-rebirth-talisman.svg") calc(100% - 18px) calc(100% - 12px) / 46px auto no-repeat,
     radial-gradient(
         circle at 22px 22px,
         rgba(224, 196, 125, 0.32) 0 2px,
@@ -2986,6 +3008,7 @@ select {
   color: #fff8e7;
   border: 1px solid rgba(224, 196, 125, 0.42);
   background:
+    url("../assets/themes/seven-rebirth-ornament.svg") center / 190% auto no-repeat,
     linear-gradient(
       112deg,
       rgba(245, 234, 210, 0.2) 0 10%,
@@ -3039,6 +3062,7 @@ select {
 :root[data-theme="seven_rebirth"] .confidence-badge {
   border-color: rgba(183, 148, 79, 0.46);
   background:
+    url("../assets/themes/seven-rebirth-ornament.svg") center / 150% auto no-repeat,
     linear-gradient(135deg, rgba(224, 196, 125, 0.08), rgba(184, 39, 52, 0.06)),
     rgba(13, 17, 12, 0.68);
 }
@@ -4348,6 +4372,98 @@ tbody tr:nth-child(even) td {
   gap: 12px;
 }
 
+.profile-log-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.profile-time-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-log-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.profile-log-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.profile-log-list {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.profile-log-list h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.profile-log-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.profile-log-item strong,
+.profile-log-item p {
+  margin: 0;
+}
+
+.profile-log-item p,
+.profile-log-item time {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-log-item time {
+  white-space: nowrap;
+}
+
+.profile-log-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+.profile-log-tag {
+  min-width: 72px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--primary-strong);
+  background: rgba(255, 255, 255, 0.52);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.profile-empty-note {
+  padding: 16px;
+}
+
 .file-button {
   color: var(--text);
   border: 1px solid var(--line);
@@ -4393,14 +4509,284 @@ tbody tr:nth-child(even) td {
   text-align: center;
 }
 
+.ledger-shell {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.ledger-main {
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.ledger-panel {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  background: var(--panel);
+  backdrop-filter: var(--glass);
+  box-shadow: var(--shadow);
+}
+
+.ledger-panel::before,
+.ledger-panel::after {
+  display: none;
+}
+
+.ledger-field-panel {
+  display: grid;
+  gap: 14px;
+  max-height: calc(100vh - 190px);
+  overflow: hidden;
+}
+
+.ledger-panel-header,
+.ledger-title-inline,
+.ledger-record-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ledger-panel-header {
+  justify-content: flex-start;
+}
+
+.ledger-panel-header h2,
+.ledger-panel-header p {
+  margin: 0;
+}
+
+.ledger-panel-header h2 {
+  font-size: 20px;
+}
+
+.ledger-panel-header p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ledger-new-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px 88px;
+  gap: 8px;
+}
+
+.ledger-new-field input,
+.ledger-new-field select,
+.ledger-form-compact input,
+.ledger-group-controls input,
+.ledger-group-controls select {
+  min-height: 40px;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0 10px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.ledger-field-scroll {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+.ledger-field-section {
+  display: grid;
+  gap: 8px;
+}
+
+.ledger-field-section h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+}
+
+.ledger-field-section h3 span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ledger-field-list {
+  display: grid;
+  gap: 7px;
+}
+
+.ledger-field-item {
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 20px minmax(88px, 1fr) 44px 30px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.ledger-field-item input {
+  width: 15px;
+  height: 15px;
+}
+
+.ledger-field-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.ledger-field-item small {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.ledger-field-item .icon-button {
+  width: 28px;
+  min-height: 28px;
+  color: var(--danger);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.ledger-entry-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.ledger-form-compact {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.ledger-form-compact label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ledger-form-compact label span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-save-button {
+  align-self: end;
+  min-width: 170px;
+}
+
+.ledger-record-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.ledger-record-header {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ledger-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ledger-import-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  cursor: pointer;
+}
+
+.ledger-table-wrap {
+  overflow: auto;
+  max-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.ledger-table-wrap table {
+  min-width: 720px;
+}
+
+.ledger-group-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.ledger-group-controls {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) minmax(220px, 1.2fr) auto auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.ledger-group-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ledger-group-controls button {
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.ledger-group-preview {
+  max-height: 300px;
+}
+
+.ledger-group-empty {
+  padding: 22px;
+}
+
 @media (max-width: 1080px) {
   .app-shell,
   .workspace-band,
   .chart-grid,
   .admin-stats,
   .admin-columns,
-  .profile-grid {
+  .profile-grid,
+  .ledger-shell {
     grid-template-columns: 1fr;
+  }
+
+  .ledger-field-panel {
+    max-height: none;
+  }
+
+  .ledger-field-scroll {
+    max-height: 360px;
+  }
+
+  .ledger-form-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ledger-group-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .result-tabs {
@@ -4458,6 +4844,7 @@ tbody tr:nth-child(even) td {
   .recommend-list,
   .forecast-explain-grid,
   .stats-filter-grid,
+  .profile-log-grid,
   .profile-metrics,
   .forecast-band {
     grid-template-columns: 1fr;
@@ -4465,5 +4852,22 @@ tbody tr:nth-child(even) td {
 
   .forecast-result-header {
     flex-direction: column;
+  }
+
+  .ledger-new-field,
+  .ledger-form-compact,
+  .ledger-group-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .ledger-record-header,
+  .ledger-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ledger-actions button,
+  .ledger-save-button {
+    width: 100%;
   }
 }

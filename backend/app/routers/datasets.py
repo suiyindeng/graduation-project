@@ -18,6 +18,7 @@ from app.services.data_cleaner import (
     load_and_clean_excel,
 )
 from app.services.chart_interpreter import analyze_dataset_charts
+from app.services.activity_logger import log_activity
 from app.services.predictor import forecast_dataframe
 
 router = APIRouter()
@@ -98,6 +99,14 @@ async def upload_dataset(
     for index, record in enumerate(dataframe_to_records(cleaned_df)):
         db.add(DatasetRow(dataset_id=dataset.id, row_index=index, content_json=record))
 
+    log_activity(
+        db,
+        current_user,
+        "dataset_upload",
+        "上传并清洗数据集",
+        f"{dataset.filename}，{dataset.rows_count} 行 {dataset.columns_count} 列",
+        {"dataset_id": dataset.id},
+    )
     db.commit()
     db.refresh(dataset)
     return _detail_response(dataset, db)
@@ -134,13 +143,23 @@ def get_chart_analysis(
     rows = db.query(DatasetRow).filter(DatasetRow.dataset_id == dataset.id).order_by(DatasetRow.row_index.asc()).all()
     df = dataframe_from_records([row.content_json for row in rows])
     charts = build_chart_options(df) or dataset.charts_json
-    return analyze_dataset_charts(
+    result = analyze_dataset_charts(
         df=df,
         profile=dataset.profile_json,
         charts=charts,
         filename=dataset.filename,
         dataset_id=dataset.id,
     )
+    log_activity(
+        db,
+        current_user,
+        "chart_analysis",
+        "生成图例分析",
+        dataset.filename,
+        {"dataset_id": dataset.id},
+    )
+    db.commit()
+    return result
 
 
 @router.post("/{dataset_id}/forecast", response_model=ForecastResponse)
@@ -169,6 +188,14 @@ def create_forecast(
         summary=result["summary"],
     )
     db.add(model_run)
+    log_activity(
+        db,
+        current_user,
+        "forecast_create",
+        "生成未来行情预测",
+        f"{dataset.filename}，目标：{result['target_column']}，{payload.periods} 期",
+        {"dataset_id": dataset.id},
+    )
     db.commit()
     db.refresh(model_run)
     return ForecastResponse.model_validate(model_run)
@@ -197,6 +224,14 @@ def delete_dataset(
     current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
     dataset = _ensure_dataset_access(db.get(Dataset, dataset_id), current_user)
+    log_activity(
+        db,
+        current_user,
+        "dataset_delete",
+        "删除数据集",
+        dataset.filename,
+        {"dataset_id": dataset.id},
+    )
     db.delete(dataset)
     db.commit()
     return {"message": "数据集已删除"}

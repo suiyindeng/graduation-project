@@ -96,6 +96,7 @@ Get-Service -Name MYSQL80
 
 如果 MYSQL80 的 Status 不是 Running，则启动 MySQL：
 Start-Service -Name MYSQL80
+ Start-Service MYSQL80
 
 检查 3306 端口是否监听：
 Get-NetTCPConnection -LocalPort 3306 -ErrorAction SilentlyContinue
