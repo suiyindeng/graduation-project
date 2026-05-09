@@ -3498,6 +3498,7 @@ select {
 .legend-tips-panel h2,
 .legend-chart-list h2 {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .legend-control-panel p,
@@ -3507,6 +3508,7 @@ select {
   margin: 7px 0 0;
   color: var(--muted);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .legend-summary-grid {
@@ -4507,14 +4509,14 @@ tbody tr:nth-child(even) td {
 .ledger-shell {
   display: grid;
   grid-template-columns: 360px minmax(0, 1fr);
-  gap: 18px;
+  gap: 16px;
   align-items: start;
 }
 
 .ledger-main {
   min-width: 0;
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .ledger-panel {
@@ -4522,7 +4524,7 @@ tbody tr:nth-child(even) td {
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px;
   background: var(--panel);
   backdrop-filter: var(--glass);
   box-shadow: var(--shadow);
@@ -4659,13 +4661,13 @@ tbody tr:nth-child(even) td {
 
 .ledger-entry-panel {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .ledger-form-compact {
   display: grid;
   grid-template-columns: repeat(4, minmax(120px, 1fr));
-  gap: 12px;
+  gap: 10px 12px;
 }
 
 .ledger-form-compact label {
@@ -4689,7 +4691,7 @@ tbody tr:nth-child(even) td {
 
 .ledger-record-panel {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .ledger-record-header {
@@ -4716,13 +4718,76 @@ tbody tr:nth-child(even) td {
 
 .ledger-table-wrap {
   overflow: auto;
-  max-height: 420px;
+  max-height: 320px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
 
 .ledger-table-wrap table {
-  min-width: 720px;
+  min-width: max(920px, 100%);
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+}
+
+.ledger-table-wrap th,
+.ledger-table-wrap td {
+  min-width: 96px;
+  max-width: 180px;
+  height: 46px;
+  padding: 8px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.35;
+}
+
+.ledger-table-wrap th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel-strong);
+}
+
+.ledger-table-wrap th:last-child,
+.ledger-table-wrap td:last-child {
+  min-width: 104px;
+  width: 104px;
+  max-width: 104px;
+  text-align: center;
+}
+
+.ledger-table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ledger-editable-cell {
+  cursor: text;
+}
+
+.ledger-row-editing td {
+  background: var(--panel-strong);
+}
+
+.ledger-edit-input {
+  width: 100%;
+  min-width: 110px;
+  height: 36px;
+  padding: 0 10px;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  outline: none;
+}
+
+.ledger-edit-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 .ledger-group-panel {
@@ -4813,6 +4878,16 @@ tbody tr:nth-child(even) td {
     padding: 18px;
   }
 
+  .page-grid,
+  .legend-analysis-page {
+    gap: 14px;
+  }
+
+  .page-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
   .auth-visual {
     padding: 0;
   }
@@ -4841,8 +4916,59 @@ tbody tr:nth-child(even) td {
   .stats-filter-grid,
   .profile-log-grid,
   .profile-metrics,
+  .legend-control-panel,
+  .legend-summary-grid,
+  .legend-feature-list,
+  .legend-reader-grid,
+  .legend-section-grid,
   .forecast-band {
     grid-template-columns: 1fr;
+  }
+
+  .legend-control-panel,
+  .model-insight-panel,
+  .legend-detail-card,
+  .legend-tips-panel,
+  .legend-chart-list {
+    padding: 14px;
+  }
+
+  .legend-control-panel {
+    align-items: stretch;
+  }
+
+  .legend-control-panel label,
+  .legend-control-panel select,
+  .legend-control-panel button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .legend-control-panel h2,
+  .legend-detail-card h2 {
+    font-size: 24px;
+    line-height: 1.22;
+  }
+
+  .legend-chart-list {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .legend-chart-list button,
+  .legend-section-grid section,
+  .legend-feature-list article {
+    min-width: 0;
+  }
+
+  .legend-detail-header {
+    flex-direction: column;
+  }
+
+  .legend-type-badge,
+  .confidence-badge {
+    align-self: flex-start;
   }
 
   .forecast-result-header {

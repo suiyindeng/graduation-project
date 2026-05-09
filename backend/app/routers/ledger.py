@@ -201,6 +201,15 @@ def _excel_cell_value(value: Any) -> Any:
     return value.item() if hasattr(value, "item") else value
 
 
+def _clean_record_content(content_json: dict[str, Any]) -> dict[str, Any]:
+    content = {str(key).strip(): value for key, value in content_json.items() if str(key).strip()}
+    return {
+        key: value
+        for key, value in content.items()
+        if value is not None and str(value).strip() != ""
+    }
+
+
 @router.get("/fields")
 def list_fields(
     db: Session = Depends(get_db),
@@ -339,13 +348,40 @@ def create_record(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LedgerRecordResponse:
-    content = {str(key).strip(): value for key, value in payload.content_json.items() if str(key).strip()}
-    content = {key: value for key, value in content.items() if value is not None and str(value).strip() != ""}
+    content = _clean_record_content(payload.content_json)
     if not content:
         raise HTTPException(status_code=400, detail="请至少填写一个字段")
     record = LedgerRecord(owner_id=current_user.id, content_json=content)
     db.add(record)
     log_activity(db, current_user, "ledger_record_create", "保存记账记录", f"{len(content)} 个字段")
+    db.commit()
+    db.refresh(record)
+    return LedgerRecordResponse.model_validate(record)
+
+
+@router.put("/records/{record_id}", response_model=LedgerRecordResponse)
+def update_record(
+    record_id: int,
+    payload: LedgerRecordCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LedgerRecordResponse:
+    record = db.get(LedgerRecord, record_id)
+    if not record or record.owner_id != current_user.id:
+        raise HTTPException(status_code=404, detail="记账记录不存在")
+
+    content = _clean_record_content(payload.content_json)
+    if not content:
+        raise HTTPException(status_code=400, detail="请至少保留一个字段")
+
+    record.content_json = content
+    log_activity(
+        db,
+        current_user,
+        "ledger_record_update",
+        "修改记账记录",
+        f"记录 ID：{record.id}，{len(content)} 个字段",
+    )
     db.commit()
     db.refresh(record)
     return LedgerRecordResponse.model_validate(record)

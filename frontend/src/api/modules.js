@@ -39,6 +39,7 @@ export const ledgerApi = {
   records: () => api.get('/ledger/records'),
   importExcel: (formData) => api.post('/ledger/import', formData),
   createRecord: (payload) => api.post('/ledger/records', payload),
+  updateRecord: (id, payload) => api.put(`/ledger/records/${id}`, payload),
   removeRecord: (id) => api.delete(`/ledger/records/${id}`),
   exportExcel: () => api.get('/ledger/export', { responseType: 'blob' }),
   toDataset: (payload) => api.post('/ledger/to-dataset', payload),
