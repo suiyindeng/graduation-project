@@ -71,6 +71,11 @@ npm install
 npm run dev
 ```
 
+覆盖上传：
+cd "D:\毕业设计\代码仓库\python+vue3+mysql"
+git pull --rebase origin main
+git push origin main
+
 默认访问地址：
 
 - 前端：`http://127.0.0.1:5173`

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { BarChart3, Download, FileUp, Plus, ReceiptText, Save, Trash2 } from 'lucide-vue-next'
+import { BarChart3, Check, Download, Edit3, FileUp, Plus, ReceiptText, Save, Trash2, X } from 'lucide-vue-next'
 import { ledgerApi } from '../api/modules'
 
 const router = useRouter()
@@ -11,12 +11,16 @@ const fieldGroups = ref({ system: [], dataset: [], custom: [] })
 const records = ref([])
 const selectedFields = ref(['日期', '事项', '收入', '支出', '分类', '备注'])
 const form = ref({})
+const editingRecordId = ref(null)
+const editForm = ref({})
 const customField = ref({ name: '', field_type: 'text' })
 const groupConfig = ref({
   group_field: '分类',
   filename: '整合记账数据集'
 })
 const groupedPreview = ref(null)
+const numericFieldNames = new Set(['收入', '支出', '金额', '单价', '数量', '总金额', '实付金额', '记录数量'])
+const dateFieldNames = new Set(['日期', '订单日期', '下单日期', '成交日期', '时间', '创建时间', '记录时间'])
 
 const fieldSections = computed(() => [
   { key: 'system', title: '常用字段', fields: fieldGroups.value.system },
@@ -66,6 +70,39 @@ function inputType(type) {
   return 'text'
 }
 
+function fieldForColumn(column) {
+  const matched = allFields.value.find((field) => field.name === column)
+  if (matched) return matched
+  if (numericFieldNames.has(column)) return { name: column, field_type: 'number' }
+  if (dateFieldNames.has(column)) return { name: column, field_type: 'date' }
+  return { name: column, field_type: 'text' }
+}
+
+function dateInputValue(value) {
+  if (!value) return ''
+  const text = String(value)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text
+  if (/^\d{4}-\d{2}-\d{2}T/.test(text)) return text.slice(0, 10)
+  return text
+}
+
+function normalizedValue(field, value) {
+  if (value === undefined || value === null || String(value).trim() === '') return null
+  if (field.field_type === 'number') return Number(value)
+  return value
+}
+
+function contentFromSource(source, fields) {
+  const content = {}
+  fields.forEach((field) => {
+    const value = normalizedValue(field, source[field.name])
+    if (value !== null && !(field.field_type === 'number' && Number.isNaN(value))) {
+      content[field.name] = value
+    }
+  })
+  return content
+}
+
 function toggleField(name) {
   if (selectedFields.value.includes(name)) {
     selectedFields.value = selectedFields.value.filter((item) => item !== name)
@@ -79,6 +116,9 @@ async function loadLedger() {
   const [{ data: fields }, { data: recordRows }] = await Promise.all([ledgerApi.fields(), ledgerApi.records()])
   fieldGroups.value = fields
   records.value = recordRows
+  if (editingRecordId.value && !recordRows.some((record) => record.id === editingRecordId.value)) {
+    cancelEditRecord()
+  }
   if (!recordColumns.value.includes(groupConfig.value.group_field)) {
     groupConfig.value.group_field = textRecordColumns.value[0] || recordColumns.value[0] || '分类'
   }
@@ -130,13 +170,7 @@ async function removeCustomField(field) {
 }
 
 async function saveRecord() {
-  const content = {}
-  activeFields.value.forEach((field) => {
-    const value = form.value[field.name]
-    if (value !== undefined && value !== null && String(value).trim() !== '') {
-      content[field.name] = field.field_type === 'number' ? Number(value) : value
-    }
-  })
+  const content = contentFromSource(form.value, activeFields.value)
   if (!Object.keys(content).length) {
     message.value = '请至少填写一项内容'
     return
@@ -146,6 +180,7 @@ async function saveRecord() {
   try {
     await ledgerApi.createRecord({ content_json: content })
     form.value = {}
+    groupedPreview.value = null
     await loadLedger()
     message.value = '记账记录已保存'
   } catch (error) {
@@ -155,11 +190,76 @@ async function saveRecord() {
   }
 }
 
+function startEditRecord(record) {
+  if (editingRecordId.value === record.id) return
+  if (editingRecordId.value) {
+    message.value = '请先保存或取消当前正在修改的记录'
+    return
+  }
+  editingRecordId.value = record.id
+  const row = {}
+  recordColumns.value.forEach((column) => {
+    const field = fieldForColumn(column)
+    const value = record.content_json?.[column] ?? ''
+    row[column] = field.field_type === 'date' ? dateInputValue(value) : value
+  })
+  editForm.value = row
+  message.value = ''
+}
+
+async function handleRecordCellDblclick(record) {
+  if (loading.value) return
+  if (!editingRecordId.value) {
+    startEditRecord(record)
+    return
+  }
+  if (editingRecordId.value === record.id) return
+
+  const currentRecord = records.value.find((item) => item.id === editingRecordId.value)
+  if (currentRecord) await saveEditedRecord(currentRecord)
+}
+
+function cancelEditRecord() {
+  editingRecordId.value = null
+  editForm.value = {}
+}
+
+async function saveEditedRecord(record) {
+  const fields = recordColumns.value.map((column) => fieldForColumn(column))
+  const content = contentFromSource(editForm.value, fields)
+  if (!Object.keys(content).length) {
+    message.value = '请至少保留一项内容'
+    return
+  }
+  loading.value = true
+  message.value = ''
+  try {
+    await ledgerApi.updateRecord(record.id, { content_json: content })
+    cancelEditRecord()
+    groupedPreview.value = null
+    await loadLedger()
+    message.value = '记录已更新'
+  } catch (error) {
+    message.value = error.message
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveEditingFromPage(event) {
+  if (!editingRecordId.value || loading.value) return
+  if (event.target.closest('.ledger-row-editing')) return
+  const record = records.value.find((item) => item.id === editingRecordId.value)
+  if (record) await saveEditedRecord(record)
+}
+
 async function removeRecord(id) {
   loading.value = true
   message.value = ''
   try {
     await ledgerApi.removeRecord(id)
+    if (editingRecordId.value === id) cancelEditRecord()
+    groupedPreview.value = null
     await loadLedger()
     message.value = '记录已删除'
   } catch (error) {
@@ -281,7 +381,7 @@ onMounted(loadLedger)
 </script>
 
 <template>
-  <div class="page-grid ledger-page">
+  <div class="page-grid ledger-page" @dblclick="saveEditingFromPage">
     <header class="page-header">
       <div>
         <span class="eyebrow">LEDGER</span>
@@ -365,7 +465,7 @@ onMounted(loadLedger)
               <BarChart3 :size="22" />
               <div>
                 <h2>记账记录</h2>
-                <p>共 {{ records.length }} 条，可导出或转为可视化数据集。</p>
+                <p>共 {{ records.length }} 条，可直接编辑导入或手动保存的记录。</p>
               </div>
             </div>
             <div class="ledger-actions">
@@ -391,12 +491,47 @@ onMounted(loadLedger)
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="record in records" :key="record.id">
-                  <td v-for="column in recordColumns" :key="column">{{ record.content_json[column] ?? '-' }}</td>
+                <tr v-for="record in records" :key="record.id" :class="{ 'ledger-row-editing': editingRecordId === record.id }">
+                  <td
+                    v-for="column in recordColumns"
+                    :key="column"
+                    class="ledger-editable-cell"
+                    :title="String(record.content_json[column] ?? '')"
+                    @dblclick.stop="handleRecordCellDblclick(record)"
+                  >
+                    <input
+                      v-if="editingRecordId === record.id"
+                      v-model="editForm[column]"
+                      class="ledger-edit-input"
+                      :type="inputType(fieldForColumn(column).field_type)"
+                    />
+                    <span v-else>{{ record.content_json[column] ?? '-' }}</span>
+                  </td>
                   <td>
-                    <button class="icon-button" type="button" title="删除记录" @click="removeRecord(record.id)">
-                      <Trash2 :size="16" />
-                    </button>
+                    <div class="ledger-table-actions">
+                      <template v-if="editingRecordId === record.id">
+                        <button
+                          class="icon-button"
+                          type="button"
+                          title="保存修改"
+                          :disabled="loading"
+                          @click="saveEditedRecord(record)"
+                        >
+                          <Check :size="16" />
+                        </button>
+                        <button class="icon-button" type="button" title="取消修改" :disabled="loading" @click="cancelEditRecord">
+                          <X :size="16" />
+                        </button>
+                      </template>
+                      <template v-else>
+                        <button class="icon-button" type="button" title="编辑记录" :disabled="loading" @click="startEditRecord(record)">
+                          <Edit3 :size="16" />
+                        </button>
+                        <button class="icon-button" type="button" title="删除记录" :disabled="loading" @click="removeRecord(record.id)">
+                          <Trash2 :size="16" />
+                        </button>
+                      </template>
+                    </div>
                   </td>
                 </tr>
               </tbody>
