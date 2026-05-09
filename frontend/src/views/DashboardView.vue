@@ -267,7 +267,7 @@ async function exportReport() {
       dataset_id: currentDataset.value.id,
       model_run_id: forecast.value?.id || null,
       chart_images: chartImages,
-      notes: '由自动数据可视化系统生成。'
+      notes: '自动数据可视化系统报告。'
     })
     const url = URL.createObjectURL(data)
     const link = document.createElement('a')
@@ -383,7 +383,6 @@ onMounted(loadDatasets)
 
     <p v-if="message" class="status-text">{{ message }}</p>
 
-    <!-- Reversible dashboard pagination block: keep result-tabs/result-panel together for easy rollback. -->
     <template v-if="currentDataset">
       <section class="result-tabs">
         <div class="tab-list" role="tablist" aria-label="数据分析分类">
@@ -554,6 +553,5 @@ onMounted(loadDatasets)
         <DataPreview :rows="currentDataset.preview_rows" />
       </section>
     </template>
-    <!-- End reversible dashboard pagination block. -->
   </div>
 </template>

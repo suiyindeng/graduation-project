@@ -909,7 +909,7 @@ def analyze_dataset_charts(
     filename: str,
     dataset_id: int,
 ) -> dict[str, Any]:
-    """Explain generated charts with PyCaret-assisted modeling and readable rules."""
+    """Explain chart results with PyCaret-assisted modeling and readable rules."""
     model_context = _build_model_context(df, profile)
     chart_analyses = [_interpret_chart(chart, model_context) for chart in charts]
     target_column = model_context.get("target_column") or "主要数值字段"

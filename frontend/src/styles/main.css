@@ -385,7 +385,6 @@ button {
   background: var(--panel);
 }
 
-/* Reversible auth theme decoration block: remove through the matching end marker to undo. */
 :root:not([data-theme="rosmontis"]):not([data-theme="skadi"]):not(
     [data-theme="module_disabled"]
   ):not([data-theme="seven_rebirth"]):not([data-theme="forgotten_fenghua"])
@@ -2121,8 +2120,6 @@ button {
       rotate(calc(var(--fall-rotate) - 22deg));
   }
 }
-/* End reversible auth theme decoration block. */
-
 :root:not([data-theme="rosmontis"]):not([data-theme="skadi"]):not(
     [data-theme="module_disabled"]
   ):not([data-theme="seven_rebirth"]):not([data-theme="forgotten_fenghua"])
@@ -3429,7 +3426,6 @@ select {
   overflow-wrap: anywhere;
 }
 
-/* Reversible dashboard pagination styles: remove with DashboardView result-tabs block to rollback. */
 .result-tabs {
   position: sticky;
   top: 0;
@@ -3489,7 +3485,6 @@ select {
   flex: 0 0 auto;
   min-height: 40px;
 }
-/* End reversible dashboard pagination styles. */
 
 .legend-control-panel {
   grid-template-columns: minmax(0, 1fr) minmax(240px, 0.36fr) auto;

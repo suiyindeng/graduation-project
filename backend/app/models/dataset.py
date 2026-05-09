@@ -42,7 +42,7 @@ class DatasetRow(Base):
 
 
 class ModelRun(Base):
-    """Forecast result generated from a cleaned dataset."""
+    """Forecast result from a cleaned dataset."""
 
     __tablename__ = "model_runs"
 

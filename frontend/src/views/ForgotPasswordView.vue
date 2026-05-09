@@ -130,7 +130,6 @@ onMounted(() => {
 
 <template>
   <div class="auth-layout mode-login">
-    <!-- Reversible Arcaea auth decoration: remove this block and the matching CSS block to undo. -->
     <div class="arcaea-fall-layer" aria-hidden="true">
       <span v-for="item in arcaeaFallItems" :key="item.id" class="arcaea-fall-item" :style="item.style"></span>
     </div>

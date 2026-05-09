@@ -43,10 +43,10 @@ def _detail_response(dataset: Dataset, db: Session) -> DatasetDetail:
     recommendations_json = dataset.recommendations_json
     if dataset_rows:
         df = dataframe_from_records([row.content_json for row in dataset_rows])
-        generated_charts = build_chart_options(df)
-        if generated_charts:
-            charts_json = generated_charts
-            recommendations_json = build_recommendations(generated_charts)
+        chart_options = build_chart_options(df)
+        if chart_options:
+            charts_json = chart_options
+            recommendations_json = build_recommendations(chart_options)
 
     return DatasetDetail(
         id=dataset.id,
