@@ -11,6 +11,7 @@ const selectedDatasetId = ref('')
 const loading = ref(false)
 const message = ref('')
 const chartRefs = ref([])
+const chartButtonRefs = ref([])
 const activeChartId = ref('')
 
 const activeChartAnalysis = computed(() => {
@@ -36,6 +37,14 @@ function resetAnalysis() {
   analysis.value = null
   activeChartId.value = ''
   chartRefs.value = []
+  chartButtonRefs.value = []
+}
+
+function keepActiveChartVisible() {
+  const charts = analysis.value?.charts || []
+  const activeIndex = charts.findIndex((chart) => chart.id === activeChartId.value)
+  const button = chartButtonRefs.value[activeIndex]
+  button?.scrollIntoView?.({ block: 'nearest' })
 }
 
 async function loadDatasets() {
@@ -79,6 +88,7 @@ async function runAnalysis() {
     analysis.value = data
     activeChartId.value = data.charts?.[0]?.id || ''
     await nextTick()
+    keepActiveChartVisible()
     chartRefs.value.filter(Boolean).forEach((chartRef) => chartRef.renderChart?.())
   } catch (error) {
     message.value = error.message
@@ -90,6 +100,7 @@ async function runAnalysis() {
 function setActiveChart(chartId) {
   activeChartId.value = chartId
   nextTick(() => {
+    keepActiveChartVisible()
     chartRefs.value.filter(Boolean).forEach((chartRef) => chartRef.renderChart?.())
   })
 }
@@ -191,16 +202,19 @@ onMounted(loadDatasets)
       <section class="legend-reader-grid">
         <aside class="recommend-band legend-chart-list">
           <header><Layers3 :size="20" /><h2>图表目录</h2></header>
-          <button
-            v-for="chart in analysis.charts"
-            :key="chart.id"
-            type="button"
-            :class="{ active: activeChartId === chart.id }"
-            @click="setActiveChart(chart.id)"
-          >
-            <span>{{ chart.type_label }}</span>
-            <strong>{{ chart.title }}</strong>
-          </button>
+          <div class="legend-chart-scroll">
+            <button
+              v-for="(chart, index) in analysis.charts"
+              :key="chart.id"
+              :ref="(el) => (chartButtonRefs[index] = el)"
+              type="button"
+              :class="{ active: activeChartId === chart.id }"
+              @click="setActiveChart(chart.id)"
+            >
+              <span>{{ chart.type_label }}</span>
+              <strong>{{ chart.title }}</strong>
+            </button>
+          </div>
         </aside>
 
         <section class="legend-detail-stack">
