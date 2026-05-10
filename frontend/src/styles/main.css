@@ -363,6 +363,7 @@ button {
 .recommend-band,
 .forecast-band,
 .forecast-result,
+.legend-control-panel,
 .preview-band,
 .workspace-band,
 .admin-panel,
@@ -3487,6 +3488,9 @@ select {
 }
 
 .legend-control-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
   grid-template-columns: minmax(360px, 1fr) minmax(240px, 0.36fr) auto;
   align-items: end;
 }
@@ -3502,7 +3506,7 @@ select {
   width: 100%;
 }
 
-.legend-control-panel h2,
+.legend-control-title,
 .legend-empty-panel h2,
 .model-insight-panel h3,
 .legend-detail-card h2,
@@ -3513,7 +3517,24 @@ select {
   overflow-wrap: normal;
 }
 
-.legend-control-panel p,
+.legend-control-title {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0;
+  row-gap: 0;
+  align-items: baseline;
+}
+
+.legend-control-title span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.legend-control-description span {
+  display: inline;
+}
+
+.legend-control-description,
 .legend-empty-panel p,
 .model-insight-panel p,
 .legend-detail-card p {
@@ -4957,7 +4978,7 @@ tbody tr:nth-child(even) td {
     min-width: 0;
   }
 
-  .legend-control-panel h2,
+  .legend-control-title,
   .legend-detail-card h2 {
     font-size: 24px;
     line-height: 1.22;
@@ -5014,8 +5035,8 @@ tbody tr:nth-child(even) td {
   }
 
   .legend-analysis-page .legend-control-panel {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
+    display: flex !important;
+    flex-direction: column !important;
     align-items: stretch !important;
     gap: 14px !important;
     width: 100% !important;
@@ -5032,13 +5053,13 @@ tbody tr:nth-child(even) td {
 
   .legend-analysis-page .legend-control-copy {
     display: block !important;
-    inline-size: 100% !important;
-    min-inline-size: 0 !important;
-    max-inline-size: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
-  .legend-analysis-page .legend-control-panel h2,
-  .legend-analysis-page .legend-control-panel p,
+  .legend-analysis-page .legend-control-title,
+  .legend-analysis-page .legend-control-description,
   .legend-analysis-page .legend-control-panel label,
   .legend-analysis-page .legend-detail-card h2,
   .legend-analysis-page .legend-detail-card p {
@@ -5053,14 +5074,35 @@ tbody tr:nth-child(even) td {
     line-break: strict;
   }
 
-  .legend-analysis-page .legend-control-panel p,
+  .legend-analysis-page .legend-control-title {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: baseline !important;
+    font-size: 24px;
+    line-height: 1.25;
+  }
+
+  .legend-analysis-page .legend-control-title span {
+    display: inline-block !important;
+    width: auto !important;
+    min-width: max-content !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    writing-mode: horizontal-tb !important;
+  }
+
+  .legend-analysis-page .legend-control-description span {
+    display: inline-block !important;
+    width: auto !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    writing-mode: horizontal-tb !important;
+  }
+
+  .legend-analysis-page .legend-control-description,
   .legend-analysis-page .legend-detail-card p {
     word-break: normal !important;
     overflow-wrap: break-word !important;
-  }
-
-  .legend-analysis-page .legend-control-panel h2 {
-    font-size: 24px;
-    line-height: 1.25;
+    line-height: 1.7;
   }
 }

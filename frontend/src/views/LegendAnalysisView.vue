@@ -107,11 +107,13 @@ onMounted(loadDatasets)
       <button class="icon-button" title="刷新数据集" @click="loadDatasets"><RefreshCcw :size="18" /></button>
     </header>
 
-    <section class="forecast-result legend-control-panel">
+    <section class="legend-control-panel">
       <div class="legend-control-copy">
         <span class="eyebrow">DATASET</span>
-        <h2>选择要解读的数据集</h2>
-        <p>系统会基于清洗后的数据和已生成图表，使用 PyCaret 建模提示与统计规则说明图表含义。</p>
+        <h2 class="legend-control-title"><span>选择要解读</span><span>的数据集</span></h2>
+        <p class="legend-control-description">
+          <span>系统会基于清洗后的数据</span><span>和已生成图表，</span><span>使用 PyCaret 建模提示</span><span>与统计规则说明图表含义。</span>
+        </p>
       </div>
       <label class="legend-control-select">
         数据集
@@ -228,7 +230,7 @@ onMounted(loadDatasets)
               </section>
 
               <section>
-                <h3><Database :size="18" /> 图上数据代表什么</h3>
+                <h3><Database :size="18" /> 图上数值代表什么</h3>
                 <ul>
                   <li v-for="item in activeChartAnalysis.data_meaning" :key="item">{{ item }}</li>
                 </ul>

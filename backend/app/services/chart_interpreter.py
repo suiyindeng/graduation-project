@@ -186,6 +186,49 @@ def _top_bottom_findings(values: list[dict[str, Any]], top_word: str = "最高")
     ]
 
 
+def _field_value_explanation(value_name: str) -> str:
+    field = str(value_name)
+    if any(keyword in field for keyword in ["记录数", "订单数", "数量", "销量", "件数"]):
+        return f"「{field}」表示记录或商品的数量，数值越大代表该时间段或类别出现得越多。"
+    if any(keyword in field for keyword in ["金额", "销售额", "收入", "支出", "实付", "付款", "总额"]):
+        return f"「{field}」表示金额类指标，通常可理解为销售规模、收入规模或支出规模。"
+    if any(keyword in field for keyword in ["单价", "价格", "均价", "平均"]):
+        return f"「{field}」表示平均水平或价格水平，适合观察高低变化，不等同于总销售规模。"
+    if "折扣" in field:
+        return f"「{field}」表示折扣水平，数值越低通常代表优惠力度越大。"
+    if "评分" in field:
+        return f"「{field}」表示评价分数，数值越高通常代表客户反馈越好。"
+    return f"「{field}」来自清洗后的同名字段，数值越大代表该指标在当前维度下越高。"
+
+
+def _named_value_example(values: list[dict[str, Any]], label_name: str, value_name: str) -> str | None:
+    if not values:
+        return None
+    item = values[0]
+    return (
+        f"例如「{item['name']}」对应的数值为 {_format_number(item['value'])}，"
+        f"表示这个{label_name}下的「{value_name}」为 {_format_number(item['value'])}。"
+    )
+
+
+def _named_value_range(values: list[dict[str, Any]], value_name: str) -> str | None:
+    if not values:
+        return None
+    numbers = [item["value"] for item in values]
+    return (
+        f"本图中「{value_name}」的可视化数值范围约为 "
+        f"{_format_number(min(numbers))} 到 {_format_number(max(numbers))}。"
+    )
+
+
+def _compact_items(items: list[str | None]) -> list[str]:
+    result: list[str] = []
+    for item in items:
+        if item and item not in result:
+            result.append(item)
+    return result
+
+
 def _safe_profile_list(profile: dict[str, Any], key: str, df: pd.DataFrame) -> list[str]:
     return [column for column in profile.get(key, []) if column in df.columns]
 
@@ -436,10 +479,13 @@ def _interpret_line(chart: dict[str, Any], model_context: dict[str, Any]) -> dic
             "线条越高，代表该时间段的数值越大；连续上扬代表趋势增强。",
             "尖峰和低谷往往对应活动、淡旺季、异常订单或数据录入问题。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             f"每一个点表示一个时间段的「{value_name}」汇总结果。",
+            _field_value_explanation(str(value_name)),
+            _named_value_example(values, "时间段", str(value_name)),
+            _named_value_range(values, str(value_name)),
             "面积阴影用于强调走势，不代表额外字段。",
-        ],
+        ]),
         "key_findings": [trend_text, *findings],
         "business_questions": [
             "最高月份是否有促销、节假日或大客户订单？",
@@ -468,10 +514,14 @@ def _interpret_bar(chart: dict[str, Any], model_context: dict[str, Any]) -> dict
             "先看最高的几根柱子，它们通常是重点产品、重点地区或重点渠道。",
             "再看明显偏低的柱子，判断是自然低需求还是经营问题。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             f"横轴代表{fields[0]}，纵轴代表「{value_name}」的汇总值。",
+            _field_value_explanation(str(value_name)),
+            _named_value_example(values, str(fields[0]), str(value_name)),
+            _named_value_range(values, str(value_name)),
+            "柱子高度就是该类别对应的数值大小，两个柱子的高低差可以直接理解为两类之间的差距。",
             "排序靠前的类别通常更值得优先分析。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "头部类别是否应增加库存、陈列或渠道资源？",
@@ -497,10 +547,14 @@ def _interpret_pie(chart: dict[str, Any], model_context: dict[str, Any]) -> dict
             "优先看最大扇区和前三个扇区，它们决定了整体结构。",
             "如果小扇区过多，说明类别比较分散，后续可合并为“其他”。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             f"每个扇区代表一个类别在「{value_name}」中的占比。",
+            _field_value_explanation(str(value_name)),
+            _named_value_example(values, "类别", str(value_name)),
+            "扇区上的百分比表示该类别占全部已展示类别总量的比例。",
+            "同一张饼图中，扇区越大，说明该类别占用的业务份额越高。",
             "占比图适合看结构，不适合精确比较细小差异。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "销售是否过度依赖少数品类或渠道？",
@@ -525,6 +579,13 @@ def _interpret_scatter(chart: dict[str, Any], model_context: dict[str, Any]) -> 
     relation = "关系较弱"
     if corr is not None:
         relation = "正向关系" if corr >= 0.35 else "反向关系" if corr <= -0.35 else "关系较弱"
+    example = (
+        f"例如一个点位于横轴 {_format_number(points[0][0])}、纵轴 {_format_number(points[0][1])}，"
+        f"表示这条记录的「{x_name}」为 {_format_number(points[0][0])}，"
+        f"「{y_name}」为 {_format_number(points[0][1])}。"
+        if points
+        else None
+    )
     return {
         "plain_language": f"这是一张关系图，用来观察「{x_name}」和「{y_name}」是否一起变化。",
         "how_to_read": [
@@ -533,10 +594,12 @@ def _interpret_scatter(chart: dict[str, Any], model_context: dict[str, Any]) -> 
             "点从左上到右下分布，说明两个字段可能一高一低。",
             "远离大多数点的记录可能是异常订单或特殊业务场景。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             f"横向位置代表「{x_name}」，纵向位置代表「{y_name}」。",
+            example,
+            "图中的数字不是排名，而是每条记录在两个字段上的真实数值坐标。",
             "点越密集，说明这一区间的数据越常见。",
-        ],
+        ]),
         "key_findings": [
             f"当前散点整体呈{relation}。"
             + (f" 相关系数约为 {corr:.2f}。" if corr is not None else ""),
@@ -567,6 +630,12 @@ def _interpret_heatmap(chart: dict[str, Any], model_context: dict[str, Any]) -> 
         findings.append(f"「{pair['x']}」与「{pair['y']}」呈{relation}，相关系数约为 {pair['value']:.2f}。")
     if not findings:
         findings.append("当前热力图没有明显的强相关字段。")
+    example = (
+        f"例如「{ordered[0]['x']}」与「{ordered[0]['y']}」的相关系数约为 {ordered[0]['value']:.2f}，"
+        "表示二者线性变化关系较强。"
+        if ordered
+        else None
+    )
     return {
         "plain_language": "这是一张相关性热力图，用来快速发现哪些数值字段之间关系更紧密。",
         "how_to_read": [
@@ -574,10 +643,12 @@ def _interpret_heatmap(chart: dict[str, Any], model_context: dict[str, Any]) -> 
             "数值接近 -1 表示一个升高时另一个可能降低。",
             "数值接近 0 表示线性关系较弱，不能单独作为判断依据。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "每个格子代表两个数值字段之间的相关系数。",
+            "相关系数范围是 -1 到 1：越接近 1 越同向，越接近 -1 越反向，越接近 0 关系越弱。",
+            example,
             "颜色只是辅助强调强弱，最终要结合具体数值和业务场景判断。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "强相关字段是否存在重复含义，例如单价、数量和总金额？",
@@ -596,6 +667,12 @@ def _interpret_factor_loading(chart: dict[str, Any], model_context: dict[str, An
         findings.append(f"「{cell['y']}」在「{cell['x']}」上的载荷较高，方向为{relation}，载荷值约 {cell['value']:.2f}。")
     if not findings:
         findings.append("当前字段之间没有形成明显的高载荷因子。")
+    example = (
+        f"例如「{ordered[0]['y']}」在「{ordered[0]['x']}」上的载荷值约为 {ordered[0]['value']:.2f}，"
+        "说明这个字段与该综合因子的关联较强。"
+        if ordered
+        else None
+    )
     return {
         "plain_language": "这是一张因子载荷热力图，用来说明每个原始字段更接近哪个综合因子。",
         "how_to_read": [
@@ -603,10 +680,13 @@ def _interpret_factor_loading(chart: dict[str, Any], model_context: dict[str, An
             "颜色越深或绝对值越大，说明该字段越能代表这个因子。",
             "正值表示同向影响，负值表示反向影响；读业务含义时主要看绝对值大小。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "载荷可以理解为字段和综合因子的关系强度。",
+            "载荷值通常看绝对值：越接近 1 关系越强，越接近 0 关系越弱。",
+            "正数表示同向关系，负数表示反向关系。",
+            example,
             "同一因子下高载荷字段越集中，这个因子的业务含义越容易解释。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "同一个因子下的高载荷字段是否都指向同一种业务现象？",
@@ -624,6 +704,12 @@ def _interpret_factor_contribution(chart: dict[str, Any], model_context: dict[st
     if total:
         first_two = sum(item["value"] for item in ordered[:2])
         findings.append(f"前两个因子合计解释约 {first_two:.1f}% 的数据差异。")
+    example = (
+        f"例如「{ordered[0]['name']}」贡献率为 {_format_number(ordered[0]['value'])}%，"
+        "表示它解释了这部分比例的数据差异。"
+        if ordered
+        else None
+    )
     return {
         "plain_language": "这是一张因子贡献率图，用来判断哪些综合因子最能解释数据变化。",
         "how_to_read": [
@@ -631,10 +717,12 @@ def _interpret_factor_contribution(chart: dict[str, Any], model_context: dict[st
             "通常优先解释贡献率最高的前两个或前三个因子。",
             "如果第一个因子特别高，说明多数变化可被一个核心经营因素概括。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "贡献率表示该因子解释整体数据差异的比例。",
+            example,
+            "多个因子贡献率相加越高，说明这些因子越能概括原始数据中的主要变化。",
             "它不是销售额占比，而是模型对字段变化结构的概括能力。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "贡献率最高的因子是否可解释为主经营驱动？",
@@ -661,10 +749,12 @@ def _interpret_factor_score_scatter(chart: dict[str, Any], model_context: dict[s
             "点聚在一起，说明这些记录结构相似。",
             "离主体很远的点，可能是特殊订单、异常金额、特殊客户或录入问题。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "因子得分不是原始金额，而是记录在综合因子上的相对位置。",
+            "横轴和纵轴的正负值表示记录相对平均水平的位置，正值更偏向该因子的正方向，负值更偏向反方向。",
+            "离 0 越远，说明这条记录在该综合因子上的特征越明显。",
             "它适合做分群和异常观察，不适合直接当作销售额使用。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "离群点是否对应特殊客户、大额订单或异常数据？",
@@ -684,10 +774,13 @@ def _interpret_factor_key_fields(chart: dict[str, Any], model_context: dict[str,
             "靠前字段通常是后续解释经营变化时最该优先看的字段。",
             "如果多个字段强度接近，说明数据变化不是由单一字段决定。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "综合载荷强度来自字段在多个因子上的载荷大小。",
+            _named_value_example(values, "字段", "综合载荷强度"),
+            _named_value_range(values, "综合载荷强度"),
+            "柱子越高，说明该字段越能代表数据里的主要变化结构。",
             "它表示解释力强弱，不表示字段本身数值大小。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "高强度字段是否与销售额、数量、单价或折扣有关？",
@@ -720,10 +813,12 @@ def _interpret_factor_profile(chart: dict[str, Any], model_context: dict[str, An
             "线条在某个字段方向越靠外，说明该因子越受这个字段影响。",
             "可以根据最突出的字段给因子命名，例如价格因子、规模因子或订单活跃因子。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "雷达值是载荷归一化后的相对强度，不是原始字段数值。",
+            "每个方向的数值范围通常是 0 到 100，越靠外表示该因子越受这个字段影响。",
+            "不同因子的线条可用于比较谁更依赖某个字段，但不能直接当作金额或数量。",
             "它帮助理解因子含义，适合写入论文中的因子命名过程。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "每个因子最适合用什么业务名称概括？",
@@ -761,10 +856,13 @@ def _interpret_boxplot(chart: dict[str, Any], model_context: dict[str, Any]) -> 
             "盒子越高或上下须越长，说明该分类内部波动越大。",
             "波动很大的分类需要检查是否存在异常大单、退货或录入问题。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "每个分类展示最小值、下四分位数、中位数、上四分位数和最大值。",
+            "盒子中间线是中位数，表示该分类较典型的一条记录水平。",
+            "盒子上下边界表示中间 50% 数据的范围，范围越宽代表波动越大。",
+            "上下须表示更低和更高的正常范围，超出主体的点通常要重点检查。",
             "箱线图不强调总量，而强调分布和稳定性。",
-        ],
+        ]),
         "key_findings": findings,
         "business_questions": [
             "哪个分类的典型销售表现更好？",
@@ -788,10 +886,13 @@ def _interpret_treemap(chart: dict[str, Any], model_context: dict[str, Any]) -> 
             "先看最大的几个矩形，它们通常是经营重点。",
             "如果面积集中在少数矩形，说明业务集中度较高。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "每个矩形代表一个分类项目。",
             "面积大小代表该分类的汇总数值。",
-        ],
+            _field_value_explanation(str(model_context.get("target_column") or "数值")),
+            _named_value_example(values, "分类", str(model_context.get("target_column") or "数值")),
+            "矩形越大，说明该分类在整体中的业务份额越高。",
+        ]),
         "key_findings": findings,
         "business_questions": [
             "销售是否集中在少数类别？",
@@ -824,10 +925,12 @@ def _interpret_radar(chart: dict[str, Any], model_context: dict[str, Any]) -> di
             "面积越大，通常说明综合表现越强，但仍要看具体指标。",
             "某一方向特别突出，说明该类别在对应指标上有优势。",
         ],
-        "data_meaning": [
+        "data_meaning": _compact_items([
             "每个方向代表一个数值指标。",
             "这里的值经过归一化，适合比较强弱，不代表原始金额或数量。",
-        ],
+            "雷达图中 100 通常代表当前展示类别中的最高水平，其他数值表示相对最高水平的比例。",
+            "某个方向越靠外，说明该类别在这个指标上越接近当前最高表现。",
+        ]),
         "key_findings": findings,
         "business_questions": [
             "哪些类别综合表现更平衡？",
@@ -928,6 +1031,7 @@ def analyze_dataset_charts(
         "charts": chart_analyses,
         "reading_tips": [
             "先看图表标题，确认它回答的是趋势、对比、占比还是字段关系。",
+            "再看坐标轴、图例和数值单位，确认柱高、点位、百分比或相关系数分别代表什么。",
             "再看最高点、最低点和变化方向，这些通常对应最需要解释的业务现象。",
             "最后结合 PyCaret 提示的关键字段，判断哪些因素更可能影响主要经营指标。",
         ],
