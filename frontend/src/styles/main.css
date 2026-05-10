@@ -3605,6 +3605,11 @@ select {
   top: 74px;
   display: grid;
   gap: 10px;
+  max-height: calc(100vh - 104px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 12px;
+  scrollbar-gutter: stable;
 }
 
 .legend-chart-list header {
@@ -4986,8 +4991,8 @@ tbody tr:nth-child(even) td {
 
   .legend-chart-list {
     position: static;
-    max-height: none;
-    overflow: visible;
+    max-height: 54vh;
+    overflow-y: auto;
   }
 
   .legend-chart-list button,
