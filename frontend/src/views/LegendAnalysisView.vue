@@ -108,12 +108,12 @@ onMounted(loadDatasets)
     </header>
 
     <section class="forecast-result legend-control-panel">
-      <div>
+      <div class="legend-control-copy">
         <span class="eyebrow">DATASET</span>
         <h2>选择要解读的数据集</h2>
         <p>系统会基于清洗后的数据和已生成图表，使用 PyCaret 建模提示与统计规则说明图表含义。</p>
       </div>
-      <label>
+      <label class="legend-control-select">
         数据集
         <select v-model="selectedDatasetId" @change="loadSelectedDataset">
           <option value="">请选择数据集</option>
@@ -122,7 +122,7 @@ onMounted(loadDatasets)
           </option>
         </select>
       </label>
-      <button class="primary-button" :disabled="loading || !selectedDatasetId" @click="runAnalysis">
+      <button class="primary-button legend-control-action" :disabled="loading || !selectedDatasetId" @click="runAnalysis">
         <Sparkles :size="18" /> {{ loading ? '分析中' : '生成图例分析' }}
       </button>
     </section>

@@ -3487,8 +3487,19 @@ select {
 }
 
 .legend-control-panel {
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.36fr) auto;
+  grid-template-columns: minmax(360px, 1fr) minmax(240px, 0.36fr) auto;
   align-items: end;
+}
+
+.legend-control-copy,
+.legend-control-select,
+.legend-control-action {
+  min-width: 0;
+}
+
+.legend-control-copy {
+  display: block;
+  width: 100%;
 }
 
 .legend-control-panel h2,
@@ -3498,7 +3509,8 @@ select {
 .legend-tips-panel h2,
 .legend-chart-list h2 {
   margin: 0;
-  overflow-wrap: anywhere;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 
 .legend-control-panel p,
@@ -3508,7 +3520,8 @@ select {
   margin: 7px 0 0;
   color: var(--muted);
   line-height: 1.6;
-  overflow-wrap: anywhere;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .legend-summary-grid {
@@ -5001,19 +5014,27 @@ tbody tr:nth-child(even) td {
   }
 
   .legend-analysis-page .legend-control-panel {
-    display: flex !important;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 14px;
-    width: 100%;
-    min-width: 0;
-    padding: 14px;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 14px !important;
   }
 
   .legend-analysis-page .legend-control-panel > * {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .legend-analysis-page .legend-control-copy {
+    display: block !important;
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: none !important;
   }
 
   .legend-analysis-page .legend-control-panel h2,
@@ -5021,10 +5042,21 @@ tbody tr:nth-child(even) td {
   .legend-analysis-page .legend-control-panel label,
   .legend-analysis-page .legend-detail-card h2,
   .legend-analysis-page .legend-detail-card p {
-    max-width: 100%;
-    white-space: normal;
-    word-break: normal;
-    overflow-wrap: break-word;
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    line-break: strict;
+  }
+
+  .legend-analysis-page .legend-control-panel p,
+  .legend-analysis-page .legend-detail-card p {
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
   }
 
   .legend-analysis-page .legend-control-panel h2 {
