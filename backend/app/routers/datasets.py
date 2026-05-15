@@ -62,7 +62,12 @@ def _detail_response(dataset: Dataset, db: Session) -> DatasetDetail:
     )
 
 
-@router.post("/upload", response_model=DatasetDetail)
+@router.post(
+    "/upload",
+    response_model=DatasetDetail,
+    summary="上传并清洗数据集",
+    description="上传 Excel 或文本表格文件，后端使用 pandas 进行字段规范化、类型识别、缺失值处理和业务值清洗，并返回图表推荐与数据预览。",
+)
 async def upload_dataset(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -112,7 +117,12 @@ async def upload_dataset(
     return _detail_response(dataset, db)
 
 
-@router.get("", response_model=list[DatasetSummary])
+@router.get(
+    "",
+    response_model=list[DatasetSummary],
+    summary="查询数据集列表",
+    description="查询当前用户可访问的数据集。普通用户只能查看自己的数据集，管理员可以查看更多数据集。",
+)
 def list_datasets(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -123,7 +133,12 @@ def list_datasets(
     return [DatasetSummary.model_validate(item) for item in query.all()]
 
 
-@router.get("/{dataset_id}", response_model=DatasetDetail)
+@router.get(
+    "/{dataset_id}",
+    response_model=DatasetDetail,
+    summary="获取数据集详情",
+    description="根据数据集编号获取清洗后的字段、行列数量、数据画像、图表配置、推荐说明和前 30 行预览数据。",
+)
 def get_dataset(
     dataset_id: int,
     db: Session = Depends(get_db),
@@ -133,7 +148,11 @@ def get_dataset(
     return _detail_response(dataset, db)
 
 
-@router.get("/{dataset_id}/chart-analysis")
+@router.get(
+    "/{dataset_id}/chart-analysis",
+    summary="生成图例分析",
+    description="读取清洗后的数据和图表配置，按图表类型生成图文解析、系统发现、经营判断问题和 PyCaret/统计模型提示。",
+)
 def get_chart_analysis(
     dataset_id: int,
     db: Session = Depends(get_db),
@@ -162,7 +181,12 @@ def get_chart_analysis(
     return result
 
 
-@router.post("/{dataset_id}/forecast", response_model=ForecastResponse)
+@router.post(
+    "/{dataset_id}/forecast",
+    response_model=ForecastResponse,
+    summary="生成行情预测",
+    description="对指定数据集执行自动预测。系统优先尝试 PyCaret 自动建模，并在不可用时回退到统计/机器学习预测流程。",
+)
 def create_forecast(
     dataset_id: int,
     payload: ForecastRequest,
@@ -201,7 +225,12 @@ def create_forecast(
     return ForecastResponse.model_validate(model_run)
 
 
-@router.get("/{dataset_id}/model-runs", response_model=list[ForecastResponse])
+@router.get(
+    "/{dataset_id}/model-runs",
+    response_model=list[ForecastResponse],
+    summary="查询预测记录",
+    description="查询指定数据集的历史预测任务，返回模型算法、评价指标、预测结果和预测摘要。",
+)
 def list_model_runs(
     dataset_id: int,
     db: Session = Depends(get_db),
@@ -217,7 +246,11 @@ def list_model_runs(
     return [ForecastResponse.model_validate(run) for run in runs]
 
 
-@router.delete("/{dataset_id}")
+@router.delete(
+    "/{dataset_id}",
+    summary="删除数据集",
+    description="删除指定数据集及其相关清洗记录。普通用户只能删除自己的数据集。",
+)
 def delete_dataset(
     dataset_id: int,
     db: Session = Depends(get_db),

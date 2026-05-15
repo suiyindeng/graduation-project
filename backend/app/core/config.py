@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=ROOT_DIR / ".env", env_file_encoding="utf-8")
 
-    app_name: str = "Automatic Data Visualization System"
+    app_name: str = "基于 PyCaret 的销售数据分析预测系统"
     app_env: str = "development"
     secret_key: str = "change-this-secret-key"
     access_token_expire_minutes: int = 1440

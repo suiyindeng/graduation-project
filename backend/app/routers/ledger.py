@@ -210,7 +210,11 @@ def _clean_record_content(content_json: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-@router.get("/fields")
+@router.get(
+    "/fields",
+    summary="查询记账字段",
+    description="查询系统默认字段、从已上传数据集中提取的字段，以及当前用户自定义的记账字段。",
+)
 def list_fields(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -238,7 +242,12 @@ def list_fields(
     }
 
 
-@router.post("/fields", response_model=LedgerFieldResponse)
+@router.post(
+    "/fields",
+    response_model=LedgerFieldResponse,
+    summary="新增记账字段",
+    description="为当前用户新增一个自定义记账字段，可用于后续记录录入和整合分析。",
+)
 def create_field(
     payload: LedgerFieldCreate,
     db: Session = Depends(get_db),
@@ -263,7 +272,11 @@ def create_field(
     return LedgerFieldResponse.model_validate(field)
 
 
-@router.delete("/fields/{field_id}")
+@router.delete(
+    "/fields/{field_id}",
+    summary="删除记账字段",
+    description="删除当前用户的自定义记账字段，并从已有记账记录中移除对应字段值。",
+)
 def delete_field(
     field_id: int,
     db: Session = Depends(get_db),
@@ -284,7 +297,12 @@ def delete_field(
     return {"message": "自定义字段已删除"}
 
 
-@router.get("/records", response_model=list[LedgerRecordResponse])
+@router.get(
+    "/records",
+    response_model=list[LedgerRecordResponse],
+    summary="查询记账记录",
+    description="按创建时间倒序查询当前用户的全部记账记录。",
+)
 def list_records(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -292,7 +310,12 @@ def list_records(
     return [LedgerRecordResponse.model_validate(record) for record in _records_for_user(db, current_user)]
 
 
-@router.post("/import", response_model=list[LedgerRecordResponse])
+@router.post(
+    "/import",
+    response_model=list[LedgerRecordResponse],
+    summary="导入记账 Excel",
+    description="上传 Excel 文件并批量导入为记账记录。系统会跳过空行，并保留有效字段内容。",
+)
 async def import_records_from_excel(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -342,7 +365,12 @@ async def import_records_from_excel(
     return [LedgerRecordResponse.model_validate(record) for record in imported_records]
 
 
-@router.post("/records", response_model=LedgerRecordResponse)
+@router.post(
+    "/records",
+    response_model=LedgerRecordResponse,
+    summary="新增记账记录",
+    description="根据前端提交的动态字段内容新增一条记账记录。",
+)
 def create_record(
     payload: LedgerRecordCreate,
     db: Session = Depends(get_db),
@@ -359,7 +387,12 @@ def create_record(
     return LedgerRecordResponse.model_validate(record)
 
 
-@router.put("/records/{record_id}", response_model=LedgerRecordResponse)
+@router.put(
+    "/records/{record_id}",
+    response_model=LedgerRecordResponse,
+    summary="修改记账记录",
+    description="修改当前用户指定记账记录的字段内容。",
+)
 def update_record(
     record_id: int,
     payload: LedgerRecordCreate,
@@ -387,7 +420,11 @@ def update_record(
     return LedgerRecordResponse.model_validate(record)
 
 
-@router.delete("/records/{record_id}")
+@router.delete(
+    "/records/{record_id}",
+    summary="删除记账记录",
+    description="删除当前用户指定的一条记账记录。",
+)
 def delete_record(
     record_id: int,
     db: Session = Depends(get_db),
@@ -402,7 +439,11 @@ def delete_record(
     return {"message": "记账记录已删除"}
 
 
-@router.get("/export")
+@router.get(
+    "/export",
+    summary="导出记账 Excel",
+    description="将当前用户的记账记录导出为 Excel 文件。",
+)
 def export_records(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -421,7 +462,12 @@ def export_records(
     )
 
 
-@router.post("/to-dataset", response_model=DatasetDetail)
+@router.post(
+    "/to-dataset",
+    response_model=DatasetDetail,
+    summary="记账记录转数据集",
+    description="将选中的记账记录转换为系统数据集，并自动生成数据画像和可视化图表配置。",
+)
 def create_dataset_from_records(
     payload: LedgerDatasetCreate,
     db: Session = Depends(get_db),
@@ -441,7 +487,11 @@ def create_dataset_from_records(
     )
 
 
-@router.post("/group-preview")
+@router.post(
+    "/group-preview",
+    summary="预览记账整合结果",
+    description="按照指定字段对记账记录进行分组整合，返回整合后的行数、字段和前 30 行预览。",
+)
 def preview_grouped_records(
     payload: LedgerGroupedDatasetCreate,
     db: Session = Depends(get_db),
@@ -456,7 +506,11 @@ def preview_grouped_records(
     }
 
 
-@router.post("/group-export")
+@router.post(
+    "/group-export",
+    summary="导出整合记账 Excel",
+    description="按照指定字段整合记账记录，并将整合结果导出为 Excel 文件。",
+)
 def export_grouped_records(
     payload: LedgerGroupedDatasetCreate,
     db: Session = Depends(get_db),
@@ -483,7 +537,12 @@ def export_grouped_records(
     )
 
 
-@router.post("/group-to-dataset", response_model=DatasetDetail)
+@router.post(
+    "/group-to-dataset",
+    response_model=DatasetDetail,
+    summary="整合记账记录转数据集",
+    description="按照指定字段整合记账记录，并将整合结果保存为系统数据集，用于后续清洗、可视化和预测。",
+)
 def create_grouped_dataset_from_records(
     payload: LedgerGroupedDatasetCreate,
     db: Session = Depends(get_db),

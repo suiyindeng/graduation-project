@@ -21,7 +21,11 @@ def _check_dataset(dataset: Dataset | None, user: User) -> Dataset:
     return dataset
 
 
-@router.post("/export")
+@router.post(
+    "/export",
+    summary="导出 Word 分析报告",
+    description="将数据集概况、清洗预览、图表截图、预测结果和用户备注整合为 Word 报告并返回下载文件。",
+)
 def export_report(
     payload: ExportReportRequest,
     db: Session = Depends(get_db),

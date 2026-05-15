@@ -45,7 +45,11 @@ def _apply_user_update(target_user: User, payload: AdminUserUpdateRequest) -> No
         target_user.is_active = payload.is_active
 
 
-@router.get("/users")
+@router.get(
+    "/users",
+    summary="管理端查询用户列表",
+    description="管理员查询系统用户列表。超级管理员可查看全部用户，普通管理员只能查看普通用户。",
+)
 def list_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -68,7 +72,12 @@ def list_users(
     ]
 
 
-@router.put("/users/{user_id}", response_model=UserBase)
+@router.put(
+    "/users/{user_id}",
+    response_model=UserBase,
+    summary="管理端修改用户资料",
+    description="管理员修改普通用户资料和账号状态，但不能修改超级管理员信息。",
+)
 def update_user(
     user_id: int,
     payload: AdminUserUpdateRequest,
@@ -103,7 +112,12 @@ def update_user(
     return UserBase.model_validate(target_user)
 
 
-@router.put("/users/{user_id}/role", response_model=UserBase)
+@router.put(
+    "/users/{user_id}/role",
+    response_model=UserBase,
+    summary="超级管理员修改用户角色",
+    description="仅超级管理员可提升普通用户为管理员，或调整管理员角色及资料。",
+)
 def update_user_role(
     user_id: int,
     payload: SuperAdminUserUpdateRequest,
@@ -144,7 +158,11 @@ def update_user_role(
     return UserBase.model_validate(target_user)
 
 
-@router.get("/datasets")
+@router.get(
+    "/datasets",
+    summary="管理端查询全部数据集",
+    description="管理员查询系统内已上传的数据集列表，包括所属用户、文件名、行列数量和创建时间。",
+)
 def list_all_datasets(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
@@ -173,7 +191,11 @@ def _range_filters(column, date_from: date | None, date_to: date | None) -> list
     return filters
 
 
-@router.get("/stats")
+@router.get(
+    "/stats",
+    summary="查询系统数据统计",
+    description="超级管理员查询系统总用户数、数据集数量、清洗行数、预测次数、用户使用明细和近 7 日趋势。",
+)
 def system_stats(
     keyword: str | None = Query(default=None, alias="q"),
     date_from: date | None = None,

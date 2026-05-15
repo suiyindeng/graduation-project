@@ -33,12 +33,21 @@ def _activity_item(log: UserActivityLog) -> dict:
     }
 
 
-@router.get("/me", response_model=UserBase)
+@router.get(
+    "/me",
+    response_model=UserBase,
+    summary="获取当前用户信息",
+    description="根据请求头中的登录令牌读取当前用户的账号、邮箱、角色、主题偏好和头像信息。",
+)
 def me(current_user: User = Depends(get_current_user)) -> UserBase:
     return UserBase.model_validate(current_user)
 
 
-@router.get("/me/stats")
+@router.get(
+    "/me/stats",
+    summary="获取个人使用统计",
+    description="返回用户中心所需的个人使用概览，包括数据集数量、清洗行数、预测次数、最近登录和最近操作记录。",
+)
 def my_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -95,7 +104,12 @@ def my_stats(
     }
 
 
-@router.put("/me", response_model=UserBase)
+@router.put(
+    "/me",
+    response_model=UserBase,
+    summary="修改当前用户资料",
+    description="修改当前用户的用户名、邮箱和默认主题。超级管理员账号名和邮箱不可在用户中心修改。",
+)
 def update_me(
     payload: UserUpdateRequest,
     db: Session = Depends(get_db),
@@ -138,7 +152,12 @@ def update_me(
     return UserBase.model_validate(current_user)
 
 
-@router.post("/avatar", response_model=UserBase)
+@router.post(
+    "/avatar",
+    response_model=UserBase,
+    summary="上传用户头像",
+    description="上传 jpg、png 或 webp 格式头像，保存到后端存储目录，并返回更新后的用户信息。",
+)
 async def upload_avatar(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),

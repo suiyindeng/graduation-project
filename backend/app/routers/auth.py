@@ -85,7 +85,11 @@ def _validate_password_strength(password: str) -> None:
         raise HTTPException(status_code=400, detail="密码需要包含数字")
 
 
-@router.get("/captcha")
+@router.get(
+    "/captcha",
+    summary="生成验证码",
+    description="生成登录、注册和找回密码使用的验证码，返回验证码编号和验证码图片地址。",
+)
 def create_captcha() -> dict[str, str]:
     """Generate a short captcha for login and registration."""
     _cleanup_captchas()
@@ -95,7 +99,11 @@ def create_captcha() -> dict[str, str]:
     return {"captcha_id": captcha_id, "image_url": f"/api/auth/captcha/{captcha_id}.svg"}
 
 
-@router.get("/captcha/{captcha_id}.svg")
+@router.get(
+    "/captcha/{captcha_id}.svg",
+    summary="获取验证码图片",
+    description="根据验证码编号返回 SVG 图片。验证码过期或不存在时返回错误。",
+)
 def get_captcha_image(captcha_id: str) -> Response:
     _cleanup_captchas()
     stored = CAPTCHA_STORE.get(captcha_id)
@@ -112,7 +120,12 @@ def get_captcha_image(captcha_id: str) -> Response:
     )
 
 
-@router.post("/register", response_model=TokenResponse)
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    summary="用户注册",
+    description="校验验证码、密码强度、管理员注册码和账号唯一性，注册成功后返回访问令牌和用户信息。",
+)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
     """Register a normal user or administrator."""
     _verify_captcha(payload.captcha_id, payload.captcha_code)
@@ -144,7 +157,12 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
     return TokenResponse(access_token=token, user=UserBase.model_validate(user))
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    summary="用户登录",
+    description="校验验证码、账号和密码，登录成功后返回访问令牌和当前用户信息。",
+)
 def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     """Validate account credentials and return a signed token."""
     _verify_captcha(payload.captcha_id, payload.captcha_code)
@@ -161,7 +179,12 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
     return TokenResponse(access_token=token, user=UserBase.model_validate(user))
 
 
-@router.post("/password-reset/code", response_model=PasswordResetCodeResponse)
+@router.post(
+    "/password-reset/code",
+    response_model=PasswordResetCodeResponse,
+    summary="获取密码重置验证码",
+    description="校验图片验证码和邮箱，生成用于重置密码的 6 位验证码。当前为开发模式，验证码会直接返回给前端。",
+)
 def request_password_reset_code(
     payload: PasswordResetCodeRequest,
     db: Session = Depends(get_db),
@@ -186,7 +209,11 @@ def request_password_reset_code(
     )
 
 
-@router.post("/password-reset/confirm")
+@router.post(
+    "/password-reset/confirm",
+    summary="确认重置密码",
+    description="校验邮箱重置验证码和新密码规则，验证通过后更新用户密码。",
+)
 def confirm_password_reset(
     payload: PasswordResetConfirmRequest,
     db: Session = Depends(get_db),
